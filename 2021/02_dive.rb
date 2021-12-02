@@ -1,4 +1,4 @@
-def solve_part1 lines
+def solve_part1(lines)
 	x, y = 0, 0
 	for line in lines do
 		dir, amt = line.split
@@ -17,7 +17,7 @@ def solve_part1 lines
 	return x * y
 end
 
-def solve_part2 lines
+def solve_part2(lines)
 	x, y, dy = 0, 0, 0
 
 	for line in lines do
@@ -40,5 +40,5 @@ end
 
 lines = IO.readlines("02.txt")
 
-puts solve_part1(lines)
-puts solve_part2(lines)
+puts(solve_part1(lines))
+puts(solve_part2(lines))
