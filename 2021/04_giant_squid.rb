@@ -82,8 +82,8 @@ end
 def solve_part2(numbers, boards)
 	for number in numbers do
 		if boards.length > 1
-			# this is dirty, filter really shouldn't have a mutable side-effect on individual elements
-			boards.filter!{ |b| !b.mark(number).is_bingo? }
+			boards.each_entry { |b| b.mark(number) }
+				.filter! { |b| !b.is_bingo? }
 		else
 			if boards.first.mark(number).is_bingo?
 				return boards.first.unmarked.sum * number
