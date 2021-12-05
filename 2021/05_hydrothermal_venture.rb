@@ -33,7 +33,7 @@ include Enumerable
 		x, y = @start
 		dx = @stop[0] - start[0]
 		dy = @stop[1] - start[1]
-				
+
 		yield [x, y]
 		while [x, y] != @stop do
 			case

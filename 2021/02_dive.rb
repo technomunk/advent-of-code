@@ -23,7 +23,7 @@ def solve_part2(lines)
 	for line in lines do
 		dir, amt = line.split
 		amt = amt.to_i
-	
+
 		case dir
 		when "up"
 			dy -= amt
