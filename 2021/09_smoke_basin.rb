@@ -71,4 +71,4 @@ part2 = heights.basins
 	.reduce(1) { |m, c| m * c }
 
 puts(part1)
-print(part2)
+puts(part2)
