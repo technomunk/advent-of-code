@@ -1,18 +1,20 @@
 class Array
 	def minima
-		rows = self.each_with_index.map do |row, y|
-			filtered = row.each_with_index.filter do |h, x|
+		result = []
+		for row, y in self.each_with_index do
+			for h, x in row.each_with_index do
 				others = [
 					x > 0 ? self[y][x - 1] : nil,
 					x < (row.length - 1) ? self[y][x + 1] : nil,
 					y > 0 ? self[y - 1][x] : nil,
 					y < (self.length - 1) ? self[y + 1][x] : nil,
 				].compact
-				others.all? { |o| o > h }
+				if others.all? { |o| o > h }
+					result.push(h)
+				end
 			end
-			filtered.map { |h, x| h }
 		end
-		rows.flatten(1)
+		return result
 	end
 
 	def flood_fill!(y, x, val)
