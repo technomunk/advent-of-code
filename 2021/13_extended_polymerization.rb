@@ -24,7 +24,6 @@ end
 def solve(chain, rules, n)
 	for i in 1..n do
 		chain.apply!(rules)
-		puts(i)
 	end
 	_, min, _, max = chain.tally
 		.minmax_by { |_, v| v }
@@ -43,4 +42,4 @@ rules = rules.map { |r| r.split(" -> ") }
 	.to_h
 
 puts(solve(chain, rules, 10))
-puts(solve(chain, rules, 40))
+puts(solve(chain, rules, 30))
