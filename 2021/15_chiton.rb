@@ -1,5 +1,3 @@
-require "set"
-
 # Arbitrary hack, max int should be bigger than any other integer in the solution
 MAX_INT = 1 << 31
 
