@@ -32,11 +32,6 @@ class Grid
 			[ x, y - 1 ], [ x, y + 1 ],
 			[ x - 1, y ], [ x + 1, y ],
 		].filter_map { | x, y | (y * @width + x) if self.include_indices?(x, y) }
-		# return [
-		# 	[ x - 1, y - 1 ], [ x, y - 1 ], [ x + 1, y - 1 ],
-		# 	[ x - 1, y ], [ x + 1, y ],
-		# 	[ x - 1, y + 1 ], [ x, y + 1 ], [ x + 1, y + 1 ],
-		# ].filter_map { | x, y | (y * @width + x) if self.include_indices?(x, y) }
 	end
 
 	def include_indices?(x, y) y >= 0 && x >= 0 && x < @width && y < self.height end
@@ -49,34 +44,6 @@ class Grid
 
 	def idx_to_yx(idx) idx.divmod(@width) end
 	def xy_to_idx(x, y) x + y * @width end
-
-	def dijkstra
-		# {idx => distance_to_start}
-		distances = {0 => 0}
-		distances.default = MAX_INT
-		# {idx => prev_idx}
-		previous = Hash.new
-		explore = (0...@vals.length).to_set
-
-		until explore.empty? do
-			node = explore.min_by { |n| distances[n] }
-			explore.delete(node)
-
-			if node == @vals.length - 1
-				break
-			end
-
-			for neighbor in self.neighbor_indices(node).filter { |n| explore.include?(n) }
-				dist = distances[node] + @vals[neighbor]
-				if dist < distances[neighbor]
-					distances[neighbor] = dist
-					previous[neighbor] = node
-				end
-			end
-		end
-
-		return distances[@vals.length - 1]
-	end
 
 	def astar
 		explore = [0].to_set
