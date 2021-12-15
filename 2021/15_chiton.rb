@@ -46,15 +46,13 @@ class Grid
 	def xy_to_idx(x, y) x + y * @width end
 
 	def astar
-		explore = [0].to_set
+		explore = [0]
 		previous = Hash.new
 		distances = { 0 => 0 }
 		distances.default = MAX_INT
 
 		until explore.empty? do
-			node = explore.min_by { |n| distances[n] + hdist(n) }
-			explore.delete(node)
-
+			node = explore.pop()
 			if node == @vals.length - 1
 				break
 			end
@@ -64,7 +62,8 @@ class Grid
 				if dist < distances[neighbor]
 					previous[neighbor] = node
 					distances[neighbor] = dist
-					explore.add(neighbor)
+
+					explore.binsert(neighbor) { |v| dist - distances[v] }
 				end
 			end
 		end
@@ -102,18 +101,33 @@ class Grid
 end
 
 class Array
-	def to_grid() Grid.new(self) end
-end
+	def to_grid()
+		Grid.new(self)
+	end
 
-class Hash
-	def path(goal, start)
-		result = []
-		until goal == start do
-			result.push(goal)
-			goal = self[goal]
+	def binsert(element, &block)
+		min_i = 0
+		max_i = self.length
+		after = false
+
+		until min_i == max_i
+			i = (max_i + min_i) / 2
+			sr = block.call(self[i])
+			case
+			when sr > 0
+				max_i = (max_i == i) ? min_i : i
+				after = false
+			when sr < 0
+				after = min_i != i
+				min_i = (min_i == i) ? max_i : i
+			else
+				min_i = i
+				max_i = i
+			end
 		end
-		result.push(goal)
-		return result.reverse!
+
+		i = after ? min_i + 1 : min_i
+		self.insert(i, element)
 	end
 end
 
