@@ -1,7 +1,3 @@
-# obv look at deltas between each coordinates between scanners
-# each scanner has just one orientation
-#
-# 0: do all 24 permutations of each scanner? 26*24 = 624 sets of coordinates
 class Map
 	attr_reader(:beacons, :scanners)
 
@@ -12,7 +8,7 @@ class Map
 	end
 
 	def try_add!(scan)
-		for rot in 0...24 do
+		for rot in 1..24 do
 			rscan = scan.map { |s| s.rotation(rot) }
 			rscan_deltas = rscan.deltas
 
@@ -67,10 +63,6 @@ class Array
 
 	def rotation(n)
 		# Google 24 unit rotations or use a rubics cube as an aid
-		if n == 0
-			return self.dup
-		end
-
 		r = self
 		rots = 0
 		for _ in 0..1 do
@@ -91,10 +83,6 @@ class Array
 			end
 			r = r.roll.turn.roll
 		end
-	end
-
-	def rotations
-		(0...24).map { |n| self.rotation(n) }
 	end
 
 	def roll
@@ -119,12 +107,8 @@ scanners = STDIN.readlines
 		end
 	end
 
-lastlen = scanners.length
-# Starting at 0 the algorithm gets stuck
-# TODO: debug
-map = Map.new(scanners.delete_at(1))
-until scanners.empty? || scanners.length == lastlen do
-	lastlen = scanners.length
+map = Map.new(scanners.shift)
+until scanners.empty? do
 	scanners.reject! { |s| map.try_add!(s) }
 end
 
