@@ -94,8 +94,13 @@ class Array
 
 			for prev_type, prev_box in boxes do
 				intersection = box.intersection(prev_box)
-
 				next unless intersection
+
+				# to avoid double-counting add the intersection with the opposite sign
+				# off off => some have already been turned off
+				# off on => well, now it's on
+				# on off => well not it's off
+				# on on => don't double count
 				other_type = prev_type == "on" ? "off" : "on"
 				intersections.push([other_type, intersection])
 			end
@@ -107,12 +112,6 @@ class Array
 		end
 
 		return boxes.sum { |t, b| t == "on" ? b.volume : -b.volume }
-	end
-end
-
-class Nil
-	def volume
-		return 0
 	end
 end
 
