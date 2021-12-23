@@ -14,7 +14,11 @@ Follow official [Ruby](https://www.ruby-lang.org/en/downloads/) instructions. @t
 2. Paste the input into a file named the number of the day (0-padded) .txt, ex: `01.txt`.
 3. Run the ruby file for that particular day: `ruby 01_sonar_sweep.rb`
 
-### Days 6-25:
+### Days 6-22, 24-25:
 
 1. Get the input for a particular day from [advent of code page](https://adventofcode.com/2021/).
 2. Run the ruby script for that particular day, piping the input into standard input: `ruby 06_lanternfish.rb < [input_file]`.
+
+## Day 23
+
+Day 23 was solved manually with a pen and paper. A programmatic solution would be just an exhaustive search of all possible plays at any given point.
