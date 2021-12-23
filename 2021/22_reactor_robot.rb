@@ -13,18 +13,20 @@ class Box
 		return Box.new(x, y, z)
 	end
 
-	def min_pt
-		return @x.min, @y.min, @z.min
-	end
-
-	def max_pt
-		return @x.max, @y.max, @z.max
-	end
-
 	def each
 		yield @x
 		yield @y
 		yield @z
+	end
+
+	def each_pt
+		for z in @z do
+			for y in @y do
+				for x in @x do
+					yield x, y, z
+				end
+			end
+		end
 	end
 
 	def intersection(o)
@@ -32,84 +34,22 @@ class Box
 		return Box.try(x, y, z)
 	end
 
+	def volume
+		[@x, @y, @z].reduce(1) { |a, x| a * x.size }
+	end
+
 	def intersect?(o)
 		@x.intersect?(o.x) && @y.intersect?(o.y) && @z.intersect?(o.z)
 	end
 
-	# Get self region without the intersection with provided box, always returns an array
-	def negation(o, debug = false)
-		i = self.intersection(o)
-		unless i
-			return [self]
-		end
-
-		boxes = [
-			# slice on Z
-			Box.try(@x, @y, @z.min..i.z.before),
-			Box.try(@x, @y, i.z.after..@z.max),
-			# slice on Y
-			Box.try(@x, @y.min..i.y.before, i.z),
-			Box.try(@x, i.y.after..@y.max, i.z),
-			# slice on X
-			Box.try(@x.min..i.x.before, i.y, i.z),
-			Box.try(i.x.after..@x.max, i.y, i.z),
-		]
-		if debug
-			puts "negation["
-			puts boxes
-			puts "]"
-		end
-	
-		boxes.compact!
-		return boxes
-	end
-
-	def deintersect(o)
-		unless self.intersect?(o)
-			return [self, o]
-		end
-
-		if self.cover?(o)
-			return [self]
-		elsif o.cover?(self)
-			return [o]
-		end
-
-		if o.x == (2..17) && o.y == (-20..-8) && o.z == (-3..13)
-			puts "Box.deintersect"
-			puts self
-			puts o
-			puts "result"
-			puts self.negation(o, true) << o
-			puts
-		end
-
-		boxes = self.negation(o) << o
-		unless boxes.intersections.empty?
-			raise "Box.deintersect is wrong"
-		end
-		return boxes
-	end
-
-	def volume
-		self.reduce(1) { |a, c| a * c.size }
-	end
-
 	def to_s
-		return "Box{ x: #{@x}, y: #{@y}, z: #{z}, vol: #{self.volume} }"
-		# "Box.new(#{x},#{y},#{z})"
+		return "Box{ x: #{@x}, y: #{@y}, z: #{@z}, vol: #{self.volume} }"
 	end
 
-	def cover?(o)
-		@x.cover?(o.x) && @y.cover?(o.y) && @z.cover?(o.z)
-	end
-
-	def hash
-		[@x, @y, @z].hash
-	end
-
-	def eql?(o)
-		[@x, @y, @z].eql? [o.x, o.y, o.z]
+	# convert a point to a linear index relative to this box
+	def li(x, y, z)
+		x, y, z = x - @x.min, y - @y.min, z - @z.min
+		return z * @y.size * @x.size + y * @x.size + x
 	end
 end
 
@@ -146,51 +86,43 @@ class Range
 end
 
 class Array
-	def intersections
-		intersections = self.uniq.combination(2)
-			.map { |a, b| a.intersection(b) }
-		intersections.compact!
-		return intersections
-	end
+	def total_volume
+		boxes = []
 
-	# Recursive volume of N boxes is sum of individual volumes - total_volume of all intersections
-	def total_volume(d = 0)
-		if self.empty?
-			return 0
+		for type, box in self do
+			intersections = []
+
+			for prev_type, prev_box in boxes do
+				intersection = box.intersection(prev_box)
+
+				next unless intersection
+				other_type = prev_type == "on" ? "off" : "on"
+				intersections.push([other_type, intersection])
+			end
+		
+			boxes.concat(intersections)
+			if type == "on"
+				boxes << ["on", box]
+			end
 		end
 
-		self.deintersect.sum { |b| b.volume }
+		return boxes.sum { |t, b| t == "on" ? b.volume : -b.volume }
 	end
+end
 
-	def deintersect
-		result = [self.first]
-		for box in self do
-			result.map! { |b| b.deintersect(box) }
-				.flatten!
-				.uniq!
-		end
-		puts result
-		return result
+class Nil
+	def volume
+		return 0
 	end
 end
 
 boxes = STDIN.readlines
 	.map { |l| l.strip.split(" ", 2) }
 	.map { |t, c| [t, c.to_box] }
-	.each_with_object([]) do |line, boxes|
-		type, box = line
-		case type
-		when "on"
-			boxes.push(box)
-		when "off"
-			boxes.map! { |b| b.negation(box) }
-				.flatten!
-		end
-	end
 
-part1 = boxes.reject { |b| b.any? { |c| c.any? { |x| x < -50 || x > 51 } } }
-	.deintersect
-	.combination(2)
-	.none? {|a, b| a.intersect?(b) }
+part1 = boxes.reject { |_, b| b.any? { |c| c.any? { |x| x < -50 || x > 50 } } }
+	.total_volume
+part2 = boxes.total_volume
 
 puts(part1)
+puts(part2)
