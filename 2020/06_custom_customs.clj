@@ -12,6 +12,5 @@
     (partition-by #(= % "") lines))))
 
 (let [groups (parse-groups (read-lines *in*))]
-;;   (prn (apply + (map count (reduce conj groups))))
   (prn (apply + (map count (map #(apply clojure.set/union %) groups))))
   (prn (apply + (map count (map #(apply clojure.set/intersection %) groups)))))
