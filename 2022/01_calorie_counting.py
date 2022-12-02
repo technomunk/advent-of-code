@@ -3,7 +3,7 @@ from itertools import groupby
 from typing import Generator, Iterable
 
 
-def load_groups(lines: list[str]) -> Generator[list[int], None, None]:
+def load_groups(lines: Iterable[str]) -> Generator[list[int], None, None]:
     for has_contents, group in groupby(lines, bool):
         if has_contents:
             yield [int(calories) for calories in group]
