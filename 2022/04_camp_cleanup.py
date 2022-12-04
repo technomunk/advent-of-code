@@ -1,4 +1,4 @@
-import fileinput
+from utils import match_transform_inputs
 
 
 def fully_contains(a: tuple[int, int], b: tuple[int, int]) -> bool:
@@ -21,11 +21,7 @@ def into_range(s: str) -> tuple[int, int]:
     return tuple(map(int, s.split("-")))
 
 
-def into_ranges(line: str) -> tuple[tuple[int, int], tuple[int, int]]:
-    return tuple(map(into_range, line.split(",")))
-
-
 if __name__ == "__main__":
-    ranges = [into_ranges(line.strip()) for line in fileinput.input("-")]
-    print(sum(map(int, (fully_contains(*r) for r in ranges))))
-    print(sum(map(int, (overlaps(*r) for r in ranges))))
+    ranges = match_transform_inputs(r"(\d+-\d+),(\d+-\d+)", into_range)
+    print(sum(fully_contains(*r) for r in ranges))
+    print(sum(overlaps(*r) for r in ranges))
