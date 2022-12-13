@@ -21,6 +21,18 @@ def match_transform_inputs(
     return [match_transform(line.strip(), pattern, transform) for line in fileinput.input(input_)]
 
 
+def slurp_lines(input_: str = "-") -> list[str]:
+    return [line.strip() for line in fileinput.input(input_)]
+
+
+def rindex(seq: Sequence[T], value: T) -> int:
+    """Get the index of the latest element that equals provided value"""
+    for index in range(len(seq) - 1, -1, -1):
+        if seq[index] == value:
+            return index
+    raise ValueError()
+
+
 def safe_index(seq: Sequence[T], value: T) -> int | None:
     try:
         return seq.index(value)
