@@ -1,6 +1,6 @@
 import operator
 from functools import reduce
-from typing import Callable, Generator, Generic, Iterable, Iterator, Self, TypeVar
+from typing import Generator, Generic, Iterable, Iterator, TypeVar
 
 T = TypeVar("T")
 OT = TypeVar("OT")

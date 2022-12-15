@@ -1,6 +1,6 @@
 import fileinput
 import re
-from typing import Callable, Iterable, Sequence, TypeVar
+from typing import Callable, Sequence, TypeVar
 
 T = TypeVar("T")
 
@@ -18,7 +18,7 @@ def match_transform(
 
 def match_transform_inputs(
     pattern: str | re.Pattern[str],
-    transform: Callable[[str], T],
+    transform: Callable[[tuple[str, ...]], T],
     input_: str = "-",
 ) -> list[tuple[T, ...]]:
     return [match_transform(line.strip(), pattern, transform) for line in fileinput.input(input_)]
