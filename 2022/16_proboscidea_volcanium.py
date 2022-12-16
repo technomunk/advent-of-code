@@ -1,10 +1,7 @@
 from dataclasses import dataclass, field
-from heapq import heapify, heappush
 from typing import Self
 
 from utils import match_transform_inputs
-
-_path_cache = {}
 
 
 @dataclass
@@ -19,6 +16,22 @@ class Valve:
 
     def relieved_pressure(self, time: int) -> int:
         return self.flow_rate * (time - 1)
+
+    def max_relative_neighbor(
+        self, valves: dict[str, Self], ignore: set[str] = {}
+    ) -> tuple[str, float]:
+        max_flow = 0
+        neighbor = ""
+        for identifier, distance in self.distances.items():
+            if identifier in ignore:
+                continue
+
+            heuristic_flow = valves[identifier].flow_rate / (distance**1.2)
+            if heuristic_flow > max_flow:
+                max_flow = heuristic_flow
+                neighbor = identifier
+
+        return neighbor, max_flow
 
 
 def calculate_distance(valves: dict[str, Valve], a: str, b: str) -> None:
@@ -44,10 +57,6 @@ def calculate_distance(valves: dict[str, Valve], a: str, b: str) -> None:
                 valves[connection].distances[a] = distance
 
 
-# Calculate relative distances for each valve
-# then we can immediately know how much flow we can get at each point
-# ! always turn on valve or walk toward valve to turn on !
-# so we want to turn on as many valves as possible, and we just want to find optimal order
 def calculate_distances(valves: dict[str, Valve]) -> None:
     identifiers = list(valves.keys())
     for i, a in enumerate(identifiers):
@@ -55,46 +64,31 @@ def calculate_distances(valves: dict[str, Valve]) -> None:
             calculate_distance(valves, a, b)
 
 
-def optimal_path(
-    valves: dict[str, Valve],
-    time: int,
-    identifier: str,
-    ignore: frozenset[str],
-) -> int:
-    global _path_cache
-    cached_result = _path_cache.get((time, identifier, ignore))
-    if cached_result is not None:
-        return cached_result
-
-    if time <= 0 or len(valves) == len(ignore):
-        return 0
-
-    ignore |= {identifier}
-    valve = valves[identifier]
-    options = [
-        optimal_path(valves, time - distance, connection, ignore)
-        for connection, distance in valve.distances.items()
-        if connection not in ignore
-    ]
-
-    pressure = valve.relieved_pressure(time)
-    options.extend(
-        pressure + optimal_path(valves, time - distance - 1, connection, ignore)
-        for connection, distance in valve.distances.items()
-        if connection not in ignore
-    )
-
-    options.append(pressure)
-
-    result = max(options)
-    _path_cache[(time, identifier, ignore)] = result
-    return result
+def optimal_path(valves: dict[str, Valve]) -> int:
+    ignore = {identifier for identifier, valve in valves.items() if valve.flow_rate <= 0}
+    point = "AA"
+    time = 30
+    total_flow = 0
+    while time > 0 and point:
+        ignore.add(point)
+        np, flow = valves[point].max_relative_neighbor(valves, ignore)
+        if np == "":
+            break
+        distance = valves[point].distances[np]
+        time -= distance
+        if distance > time:
+            break
+        total_flow += valves[np].relieved_pressure(time)
+        time -= 1
+        point = np
+        print(np, f"time={time:2} total={total_flow:5} flow={flow}")
+    return total_flow
 
 
 def solve_puzzle(valves: dict[str, Valve]) -> None:
     calculate_distances(valves)
     ignore = frozenset(identifier for identifier, valve in valves.items() if valve.flow_rate <= 0)
-    print(optimal_path(valves, 30, "AA", ignore))
+    print(optimal_path(valves))
 
 
 if __name__ == "__main__":
