@@ -17,21 +17,19 @@ class Valve:
     def relieved_pressure(self, time: int) -> int:
         return self.flow_rate * (time - 1)
 
-    def max_relative_neighbor(
-        self, valves: dict[str, Self], ignore: set[str] = {}
-    ) -> tuple[str, float]:
+    def max_relative_neighbor(self, valves: dict[str, Self], ignore: set[str]) -> str:
         max_flow = 0
         neighbor = ""
         for identifier, distance in self.distances.items():
             if identifier in ignore:
                 continue
 
-            heuristic_flow = valves[identifier].flow_rate / (distance**1.2)
+            heuristic_flow = valves[identifier].flow_rate / (distance**2)
             if heuristic_flow > max_flow:
                 max_flow = heuristic_flow
                 neighbor = identifier
 
-        return neighbor, max_flow
+        return neighbor
 
 
 def calculate_distance(valves: dict[str, Valve], a: str, b: str) -> None:
@@ -64,31 +62,68 @@ def calculate_distances(valves: dict[str, Valve]) -> None:
             calculate_distance(valves, a, b)
 
 
-def optimal_path(valves: dict[str, Valve]) -> int:
+def optimal_single_path(valves: dict[str, Valve]) -> int:
     ignore = {identifier for identifier, valve in valves.items() if valve.flow_rate <= 0}
     point = "AA"
     time = 30
     total_flow = 0
     while time > 0 and point:
         ignore.add(point)
-        np, flow = valves[point].max_relative_neighbor(valves, ignore)
-        if np == "":
+        np = valves[point].max_relative_neighbor(valves, ignore)
+        if not np:
             break
         distance = valves[point].distances[np]
         time -= distance
-        if distance > time:
+        if time <= 0:
             break
         total_flow += valves[np].relieved_pressure(time)
         time -= 1
         point = np
-        print(np, f"time={time:2} total={total_flow:5} flow={flow}")
+
+    return total_flow
+
+
+def optimal_double_path(valves: dict[str, Valve]) -> int:
+    ignore = {identifier for identifier, valve in valves.items() if valve.flow_rate <= 0}
+    point_a = "AA"
+    point_b = "AA"
+    time_a = 26
+    time_b = 26
+    total_flow = 0
+    while (time_a > 0 or time_b > 0) and (point_a or point_b):
+        if time_a > time_b:
+            np = valves[point_a].max_relative_neighbor(valves, ignore)
+            ignore.add(np)
+            if not np:
+                time_a = 0
+                continue
+            distance = valves[point_a].distances[np]
+            point_a = np
+            time_a -= distance
+            if time_a <= 0:
+                continue
+            total_flow += valves[np].relieved_pressure(time_a)
+            time_a -= 1
+        else:
+            np = valves[point_b].max_relative_neighbor(valves, ignore)
+            ignore.add(np)
+            if not np:
+                time_b = 0
+                continue
+            distance = valves[point_b].distances[np]
+            point_b = np
+            time_b -= distance
+            if time_b <= 0:
+                continue
+            total_flow += valves[np].relieved_pressure(time_b)
+            time_b -= 1
     return total_flow
 
 
 def solve_puzzle(valves: dict[str, Valve]) -> None:
     calculate_distances(valves)
-    ignore = frozenset(identifier for identifier, valve in valves.items() if valve.flow_rate <= 0)
-    print(optimal_path(valves))
+    print(optimal_single_path(valves))
+    print(optimal_double_path(valves))
 
 
 if __name__ == "__main__":
