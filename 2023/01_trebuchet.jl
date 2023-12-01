@@ -1,4 +1,5 @@
-DIGIT_RE = r"^(one|two|three|four|five|six|seven|eight|nine|\d)"
+NUMBER_RE = r"^(one|two|three|four|five|six|seven|eight|nine|\d)"
+DIGIT_RE = r"^\d"
 
 DIGITS = Base.ImmutableDict(
     "one"=>"1",
@@ -12,35 +13,16 @@ DIGITS = Base.ImmutableDict(
     "nine"=>"9",
 )
 
-function filter_digits(line::String)::String
-    first_digit = nothing
-    last_digit = nothing
-
-    for ch in Iterators.filter(isdigit, line)
-        if isnothing(first_digit)
-            first_digit = ch
-        else
-            last_digit = ch
-        end
-    end
-
-    if isnothing(last_digit)
-        last_digit = first_digit
-    end
-
-    return "$first_digit$last_digit"
-end
-
 function digitize(digit)::String
     return get(DIGITS, digit, digit)
 end
 
-function grab_digits(line::String)::String
+function grab_first_last(line::String, re::Regex)::String
     first_digit = nothing
     last_digit = nothing
 
     for i = 0:length(line)-1
-        m = match(DIGIT_RE, chop(line, head=i, tail=0))
+        m = match(re, chop(line, head=i, tail=0))
         if !isnothing(m)
             if isnothing(first_digit)
                 first_digit = m.match
@@ -49,6 +31,7 @@ function grab_digits(line::String)::String
             end
         end
     end
+
     if isnothing(last_digit)
         last_digit = first_digit
     end
@@ -60,10 +43,11 @@ end
 
 function solve()
     lines = readlines()
-    digits = map(filter_digits, lines)
+    digits = map((line) -> grab_first_last(line, DIGIT_RE), lines)
     numbers = map((d) -> parse(Int, d), digits)
     println(sum(numbers))
-    digits = map(grab_digits, lines)
+
+    digits = map((line) -> grab_first_last(line, NUMBER_RE), lines)
     numbers = map((d) -> parse(Int, d), digits)
     println(sum(numbers))
 end
