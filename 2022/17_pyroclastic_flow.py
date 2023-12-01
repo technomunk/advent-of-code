@@ -1,4 +1,5 @@
 import sys
+from math import lcm
 from typing import Literal
 
 from utils import slurp_lines
@@ -39,13 +40,14 @@ def strmask(b: int) -> str:
 
 class Pit:
     def __init__(self, streams: str) -> None:
-        self.pile = bytearray()
+        self.pile = bytearray(64)
         self.streams = streams
         self.stream_index = -1
+        self.offset = 0
+        self.top = 0
 
     def drop(self, rock: bytes) -> None:
-        height = self.height + 3
-        self.pile.extend(0 for _ in range(len(self.pile), height + len(rock)))
+        height = self.top + 3
 
         # drop while possible
         rows = self.pile[height : height + len(rock)]
@@ -59,18 +61,15 @@ class Pit:
         for i, byte in enumerate(rock):
             self.pile[height + i] |= byte
 
+    def __getitem__(self, idx: slice | int) -> bytes:
+        if isinstance(idx, slice):
+            pass
+
     def stream(self) -> Literal["<", ">"]:
         self.stream_index += 1
         if self.stream_index == len(self.streams):
             self.stream_index = 0
         return self.streams[self.stream_index]
-
-    @property
-    def height(self) -> int:
-        for i in range(len(self.pile) - 1, -1, -1):
-            if self.pile[i]:
-                return i + 1
-        return 0
 
     def draw(self) -> None:
         for byte in reversed(self.pile):
@@ -81,6 +80,11 @@ class Pit:
 def solve_puzzle(streams: str) -> None:
     pit = Pit(streams)
     for i in range(2022):
+        pit.drop(ROCKS[i % len(ROCKS)])
+
+    for i in range(2022, 1_000_000_000_000):
+        if i % 1_000_000 == 0:
+            print(i, end="\r")
         pit.drop(ROCKS[i % len(ROCKS)])
 
     print(pit.height)
