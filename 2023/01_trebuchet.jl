@@ -1,7 +1,7 @@
-NUMBER_RE = r"^(one|two|three|four|five|six|seven|eight|nine|\d)"
-DIGIT_RE = r"^\d"
+const NUMBER_RE = r"^(one|two|three|four|five|six|seven|eight|nine|\d)"
+const DIGIT_RE = r"^\d"
 
-DIGITS = Base.ImmutableDict(
+const DIGITS = Base.ImmutableDict(
     "one" => "1",
     "two" => "2",
     "three" => "3",
@@ -41,20 +41,18 @@ function grab_first_last(line::String, re::Regex)::String
     return "$first_digit$last_digit"
 end
 
-function parse_first_last_digit(line::String)::Int
-    return grab_first_last(line, DIGIT_RE) |> d -> parse(Int, d)
-end
-
-function parse_first_last_number(line::String)::Int
-    return grab_first_last(line, NUMBER_RE) |> d -> parse(Int, d)
-end
-
 function solve()
     lines = readlines()
-    result = map(parse_first_last_digit, lines) |> sum
+    result = lines .|>
+        (l -> grab_first_last(l, DIGIT_RE)) .|>
+        (d -> parse(Int, d)) |>
+        sum
     println(result)
 
-    result = map(parse_first_last_number, lines) |> sum
+    result = lines .|>
+        (l -> grab_first_last(l, NUMBER_RE)) .|>
+        (d -> parse(Int, d)) |>
+        sum
     println(result)
 end
 
