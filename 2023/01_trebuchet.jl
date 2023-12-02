@@ -43,16 +43,10 @@ end
 
 function solve()
     lines = readlines()
-    result = lines .|>
-        (l -> grab_first_last(l, DIGIT_RE)) .|>
-        (d -> parse(Int, d)) |>
-        sum
+    result = sum(parse.(Int, grab_first_last.(lines, DIGIT_RE)))
     println(result)
 
-    result = lines .|>
-        (l -> grab_first_last(l, NUMBER_RE)) .|>
-        (d -> parse(Int, d)) |>
-        sum
+    result = sum(parse.(Int, grab_first_last.(lines, NUMBER_RE)))
     println(result)
 end
 
