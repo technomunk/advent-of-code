@@ -8,8 +8,8 @@ end
 
 struct Card
     id::String
-    have::Vector{String}
     winning::Vector{String}
+    have::Vector{String}
 end
 
 function solve1(cards::Vector{Card})
