@@ -1,4 +1,4 @@
-function takematch(re::Regex, s::AbstractString)::Tuple{Union{Regex,Nothing},SubString}
+function takematch(re::Regex, s::AbstractString)::Tuple{Union{RegexMatch,Nothing},SubString}
     m = match(re, s)
     return _take(m, s)
 end
@@ -11,7 +11,7 @@ function neighborindicies(m::AbstractArray{T,N}, n::Int, i::Int)::UnitRange wher
     return max(1, i - 1):min(size(m, n), i + 1)
 end
 
-function _take(m::RegexMatch, s::AbstractString)::Tuple{Regex,SubString}
+function _take(m::RegexMatch, s::AbstractString)::Tuple{RegexMatch,SubString}
     s = SubString(s, m.offset + length(m.match) - 1)
     return m, s
 end
