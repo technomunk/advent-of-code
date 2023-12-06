@@ -17,11 +17,11 @@ function solve2(time::Int, distance::Int)
 end
 
 function countwintimes(time::Int, distance::Int)::Int
-    t = 0
-    while (time - t)*t <= distance
-        t += 1
+    for t = 0:time
+        if (time - t)*t > distance
+            return length(t:(time-t))
+        end
     end
-    return length(t:(time-t))
 end
 
 solve()
