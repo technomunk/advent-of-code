@@ -25,11 +25,11 @@ function parse(::Type{Hand}, line::AbstractString)::Hand
 end
 
 function solve1(plays::AbstractArray{Play})
-    plays = sort(plays, by=p -> rank(p.hand) => sortstr(p.hand))
+    plays = sort(plays, by=p -> rank(p.hand) => ord(p.hand))
     enumerate(plays) .|>
-        (p -> p[1]*p[2].bid) |>
-        sum |>
-        println
+    (p -> p[1] * p[2].bid) |>
+    sum |>
+    println
 end
 
 struct RankPair end
@@ -103,7 +103,14 @@ end
 
 const ORDER = "23456789TJQKA"
 
-function sortstr(hand::Hand)::String
+function ord(hand::Hand)::Int
+    result = 0
+    for (card, count) in sort!(collect(hand.cards), by=((p) -> p[2] => getindex(ORDER, p[1])), rev=true)
+        result = result * 13^count + getindex(ORDER, card)
+    end
+    result
+end
+function ordstr(hand::Hand)::String
     result = ""
     for (card, count) in sort!(collect(hand.cards), by=((p) -> p[2] => getindex(ORDER, p[1])), rev=true)
         result *= repeat(card, count)
