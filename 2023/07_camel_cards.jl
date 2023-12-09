@@ -1,11 +1,10 @@
 function solve()
     plays = parse.(Play, readlines())
     solve1(plays)
+    solve2(plays)
 end
 
-struct Hand
-    cards::Dict{Char,Int}
-end
+Hand = String
 
 struct Play
     hand::Hand
@@ -14,106 +13,113 @@ end
 
 function parse(::Type{Play}, line::AbstractString)::Play
     hand, bid = split(line, " ")
-    Play(parse(Hand, hand), Base.parse(Int, bid))
-end
-function parse(::Type{Hand}, line::AbstractString)::Hand
-    cards = Dict{Char,Int}()
-    for ch in line
-        cards[ch] = get(cards, ch, 0) + 1
-    end
-    Hand(cards)
+    Play(hand, Base.parse(Int, bid))
 end
 
 function solve1(plays::AbstractArray{Play})
-    plays = sort(plays, by=p -> rank(p.hand) => ord(p.hand))
+    plays = sort(plays, by=p -> rank(p.hand) => ord(p.hand, ORDER_1))
     enumerate(plays) .|>
-    (p -> p[1] * p[2].bid) |>
-    sum |>
-    println
+        (p -> p[1] * p[2].bid) |>
+        sum |>
+        println
+end
+function solve2(plays::AbstractArray{Play})
+    plays = sort(plays, by=p -> jokerrank(p.hand) => ord(p.hand, ORDER_2))
+    enumerate(plays) .|>
+        (p -> p[1] * p[2].bid) |>
+        sum |>
+        println
 end
 
-struct RankPair end
-struct RankTwoPair end
-struct RankThreeOfAKind end
-struct RankFullHouse end
-struct RankFourOfAKind end
-struct RankFiveOfAKind end
+CardsCounts = Dict{Char,Int}
 
 function rank(hand::Hand)::Int
-    if is(hand, RankFiveOfAKind)
+    counts = cardcount(hand)
+    if hasnojoke(counts, 5)
         return 7
-    elseif is(hand, RankFourOfAKind)
+    elseif hasnojoke(counts, 4)
         return 6
-    elseif is(hand, RankFullHouse)
+    elseif isfullhouse(counts, false)
         return 5
-    elseif is(hand, RankThreeOfAKind)
+    elseif hasnojoke(counts, 3)
         return 4
-    elseif is(hand, RankTwoPair)
+    elseif istwopair(counts, false)
         return 3
-    elseif is(hand, RankPair)
+    elseif hasnojoke(counts, 2)
         return 2
     end
     return 1
 end
-
-function is(hand::Hand, ::Type{RankFiveOfAKind})::Bool
-    for (card, count) in hand.cards
-        if count == 5
-            return true
-        end
+function jokerrank(hand::Hand)::Int
+    counts = cardcount(hand)
+    if haswithjoke(counts, 5)
+        return 70 - get(counts, 'J', 0)
+    elseif haswithjoke(counts, 4)
+        return 60 - get(counts, 'J', 0)
+    elseif isfullhouse(counts, true)
+        return 50 - get(counts, 'J', 0)
+    elseif haswithjoke(counts, 3)
+        return 40 - get(counts, 'J', 0)
+    elseif istwopair(counts, true)
+        return 30 - get(counts, 'J', 0)
+    elseif haswithjoke(counts, 2)
+        return 20 - get(counts, 'J', 0)
     end
-    false
-end
-function is(hand::Hand, ::Type{RankFourOfAKind})::Bool
-    for (card, count) in hand.cards
-        if count == 4
-            return true
-        end
-    end
-    false
-end
-function is(hand::Hand, ::Type{RankFullHouse})::Bool
-    is(hand, RankThreeOfAKind) && is(hand, RankPair)
-end
-function is(hand::Hand, ::Type{RankThreeOfAKind})::Bool
-    for (card, count) in hand.cards
-        if count == 3
-            return true
-        end
-    end
-    false
-end
-function is(hand::Hand, ::Type{RankTwoPair})::Bool
-    pairs = 0
-    for (card, count) in hand.cards
-        if count == 2
-            pairs += 1
-        end
-    end
-    pairs == 2
-end
-function is(hand::Hand, ::Type{RankPair})::Bool
-    for (card, count) in hand.cards
-        if count == 2
-            return true
-        end
-    end
-    false
+    return 10
 end
 
-const ORDER = "23456789TJQKA"
+function hasnojoke(counts::CardsCounts, amount::Int)::Bool
+    any(c -> c == amount, values(counts))
+end
+function haswithjoke(counts::CardsCounts, amount::Int)::Bool
+    jc = get(counts, 'J', 0)
+    for (card, count) in counts
+        if card == 'J'
+            continue
+        elseif count + jc == amount
+            return true
+        end
+    end
+    return jc == amount
+end
+function isfullhouse(counts::CardsCounts, include_joker = false)::Bool
+    if include_joker
+        return haswithjoke(counts, 3) && haswithjoke(counts, 2)
+    end
+    return hasnojoke(counts, 3) && hasnojoke(counts, 2)
+end
+function istwopair(counts::CardsCounts, include_joker = false)::Bool
+    jc = 0
+    if include_joker
+        jc = get(counts, 'J', 0)
+    end
+    pair_count = 0
+    for (card, count) in counts
+        if card == 'J' && count == 2
+            pair_count += 1
+            jc = 0
+        elseif count + jc == 2
+            pair_count += 1
+            jc = 0
+        end
+    end
+    return pair_count == 2
+end
 
-function ord(hand::Hand)::Int
+const ORDER_1 = "23456789TJQKA"
+const ORDER_2 = "J23456789TQKA"
+
+function cardcount(hand::Hand)::Dict{Char,Int}
+    result = Dict{Char,Int}()
+    for card in hand
+        result[card] = get(result, card, 0) + 1
+    end
+    return result
+end
+function ord(hand::Hand, order::String)::Int
     result = 0
-    for (card, count) in sort!(collect(hand.cards), by=((p) -> p[2] => getindex(ORDER, p[1])), rev=true)
-        result = result * 13^count + getindex(ORDER, card)
-    end
-    result
-end
-function ordstr(hand::Hand)::String
-    result = ""
-    for (card, count) in sort!(collect(hand.cards), by=((p) -> p[2] => getindex(ORDER, p[1])), rev=true)
-        result *= repeat(card, count)
+    for card in hand
+        result = result * 13 + getindex(order, card)
     end
     result
 end
