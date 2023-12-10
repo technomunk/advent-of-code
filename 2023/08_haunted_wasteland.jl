@@ -12,12 +12,13 @@ struct Graph
 end
 
 function solve1(instructions::String, graph::Graph)
-    println(steps(instructions, graph))
+    println(steps("AAA", instructions, graph, n -> n == "ZZZ"))
 end
 
 function solve2(instructions::String, graph::Graph)
     nodes = graph.nodes |> keys |> filter(n -> endswith(n, 'A')) |> collect
-    println(steps!(nodes, instructions, graph))
+    cycles = steps.(nodes, instructions, tuple(graph), n -> endswith(n, 'Z'))
+    println(lcm(cycles))
 end
 
 function parse(::Type{Graph}, lines::Vector{String})::Graph
@@ -30,36 +31,18 @@ function parse(::Type{Graph}, lines::Vector{String})::Graph
     return Graph(nodes)
 end
 
-function steps(instructions::String, graph::Graph)::Int
-    node = "AAA"
+function steps(node::String, instructions::String, graph::Graph, end_condition::Any)::Int
     steps = 0
     for dir in Iterators.cycle(instructions)
-        if node == "ZZZ"
+        if end_condition(node)
             return steps
         end
         steps += 1
-        if dir == 'L'
-            node = graph.nodes[node][1]
-        else
-            node = graph.nodes[node][2]
-        end
-    end
-end
-function steps!(nodes::AbstractArray{String}, instructions::String, graph::Graph)::Int
-    steps = 0
-    for dir in Iterators.cycle(instructions)
-        if all(n -> endswith(n, 'Z'), nodes)
-            return steps
-        end
-        steps += 1
-        for i in eachindex(nodes)
-            if dir == 'L'
-                nodes[i] = graph.nodes[nodes[i]][1]
-            else
-                nodes[i] = graph.nodes[nodes[i]][2]
-            end
-        end
+        node = next(node, dir, graph)
     end
 end
 
+function next(node::String, dir::Char, graph::Graph)::String
+    graph.nodes[node][dir == 'L' ? 1 : 2]
+end
 solve()
