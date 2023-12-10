@@ -1,112 +1,137 @@
 include("utils.jl")
 
-struct MappingRange
-    src_start::Int
-    dst_start::Int
-    len::Int
-end
-
-struct RangeMap
-    src_type::String
-    dst_type::String
-
-    ranges::Vector{MappingRange}
-end
-
 function solve()
     lines = readlines()
     seeds = Base.parse.(Int, split(chopprefix(lines[1], "seeds: ")))
-    maps = parse.(RangeMap, filter!(x -> !isempty(x), spliton(lines[2:end], "")))
+    maps = parse.(Vector{RangeMap}, filter!(x -> !isempty(x), spliton(lines[2:end], "")))
     solve1(seeds, maps)
-    solve2(seeds, maps)
+    bruteforce2(seeds, maps)
+    # solve2(seeds, maps)
 end
 
-function solve1(seeds::Vector{Int}, maps::Vector{RangeMap})
-    seeds .|> (s -> map(s, maps)) |> minimum |> println
+struct RangeMap
+    src::UnitRange
+    dst::Int
+end
+mutable struct SparseRange
+    subranges::Vector{UnitRange}
 end
 
-function solve2(seed_ranges::Vector{Int}, maps::Vector{RangeMap})
-    ranges = Iterators.partition(seed_ranges, 2) .|> (r -> r[1]:r[1]+r[2]-1)
-    ranges .|> (r -> maprange(r, maps[1])) |> display
+function solve1(seeds::Vector{Int}, maps::Vector{Vector{RangeMap}})
+    seeds .|>
+    (s -> apply(maps, s)) |>
+    minimum |>
+    println
 end
-
-function in(item::Int, range::MappingRange)::Bool
-    return item >= range.src_start && item < range.src_start + range.len
-end
-
-function map(item::Int, range::MappingRange)::Int
-    if in(item, range)
-        return range.dst_start + (item - range.src_start)
-    end
-    return item
-end
-
-function map(item::Int, map::RangeMap)::Int
-    for range in map.ranges
-        if in(item, range)
-            return range.dst_start + (item - range.src_start)
+function bruteforce2(seeds::Vector{Int}, maps::Vector{Vector{RangeMap}})
+    ranges = Iterators.partition(seeds, 2) .|> (p -> p[1]:p[1]+p[2]-1)
+    min_val = 2^62
+    for (i, r) in enumerate(ranges)
+        for i in r
+            min_val = min(apply(maps, i), min_val)
         end
+        print("\rDone with range $i")
     end
-    return item
+    println()
+    println(min_val)
+end
+function solve2(seeds::Vector{Int}, maps::Vector{Vector{RangeMap}})
+    ranges = Iterators.partition(seeds, 2) .|> (p -> SparseRange([p[1]:p[1]+p[2]-1]))
+    ranges .|>
+        (r -> apply!(maps, r)) |>
+        # minimum |>
+        display
 end
 
-function map(item::Int, maps::AbstractArray{RangeMap})::Int
+function parse(::Type{RangeMap}, line::AbstractString)::RangeMap
+    dst_start, src_start, len = Base.parse.(Int, match(r"(\d+) (\d+) (\d+)", line))
+    return RangeMap(src_start:(src_start+len-1), dst_start)
+end
+function parse(::Type{Vector{RangeMap}}, lines)::Vector{RangeMap}
+    parse.(RangeMap, lines[2:end])
+end
+
+function apply(maps::Vector{RangeMap}, val::Int)::Int
     for m in maps
-        item = map(item, m)
-    end
-    return item
-end
-
-function minmap(range::UnitRange, map::MappingRange)::UnitRange
-    min(map(range[1], map), map(range[2], map))
-end
-
-function parse(::Type{RangeMap}, lines)::RangeMap
-    src_type, dst_type = match(r"(\w+)-to-(\w+) map:", lines[1])
-
-    ranges = parse.(MappingRange, lines[2:end])
-    return RangeMap(src_type, dst_type, ranges)
-end
-
-function parse(::Type{MappingRange}, line::AbstractString)::MappingRange
-    src_start, dst_start, len = Base.parse.(Int, match(r"(\d+) (\d+) (\d+)", line))
-    return MappingRange(dst_start, src_start, len)
-end
-
-function maprange(r::UnitRange, range::MappingRange)::Vector{UnitRange}
-    if in(r.start, range) && in(r.stop, range)
-        return [range.dst_start+(r.start-range.src_start):range.dst_start+(r.stop-range.src_start)]
-    elseif in(r.start, range)
-        return [range.dst_start+(r.start-range.src_start):range.dst_start+range.len]
-    elseif in(r.stop, range)
-        return [range.dst_start:range.dst_start+(r.stop-range.src_start)]
-    end
-    return [r]
-end
-function maprange(r::UnitRange, m::RangeMap)::Vector{UnitRange}
-    # for each range collect ranges, then merge overlapping ranges
-    result = [r]
-    for range in m.ranges
-        result = vcat(maprange.(result, range)...)
-    end
-    return result
-end
-
-function mergeranges(rs::AbstractArray{UnitRange})::Vector{UnitRange}
-    result = []
-    for r in rs
-        if isempty(result)
-            push!(result, r)
-        else
-            last = result[end]
-            if last.stop >= r.start
-                result[end] = last.start:r.stop
-            else
-                push!(result, r)
-            end
+        if val ∈ m.src
+            return m.dst + val - m.src[1]
         end
     end
+    return val
+end
+function apply(maps::AbstractVector{Vector{RangeMap}}, val::Int)::Int
+    for m in maps
+        val = apply(m, val)
+    end
+    return val
+end
+
+function apply!(maps::AbstractVector{Vector{RangeMap}}, range::SparseRange)::SparseRange
+    for m in maps
+        apply!(m, range)
+    end
+    return range
+end
+function apply!(maps::Vector{RangeMap}, range::SparseRange)::SparseRange
+    for m in maps
+        apply!(m, range)
+    end
+    return range
+end
+function apply!(m::RangeMap, range::SparseRange)::SparseRange
+    ranges = Vector{UnitRange}()
+    for r in range.subranges
+        append!(ranges, apply(m, r))
+    end
+    range.subranges = mergeoverlaps!(ranges)
+    return range
+end
+function apply(m::RangeMap, range::UnitRange)::Vector{UnitRange}
+    # handle no-intersections
+    if range[end] < m.src[1] || range[1] > m.src[end]
+        return [range]
+    end
+    result = []
+    if range[1] < m.src[1]
+        push!(result, range[1]:(m.src[1]-1))
+    end
+    # push the mapped range
+    mapped_offset = max(m.src[1], range[1]) - m.src[1]
+    mapped_start = m.dst + mapped_offset
+    mapped_length = min(range[end], m.src[end]) - max(m.src[1], range[1])
+    mapped_end = mapped_start + mapped_length
+    push!(result, mapped_start:mapped_end)
+    if range[end] > m.src[end]
+        push!(result, m.src[end]+1:range[end])
+    end
     return result
 end
 
+function mergeoverlaps!(ranges::Vector{UnitRange})::Vector{UnitRange}
+    sort!(ranges)
+    last_index = 1
+    for i = 2:lastindex(ranges)
+        if ranges[i][1] ∈ ranges[last_index]
+            ranges[last_index] = ranges[last_index][1]:ranges[i][end]
+        else
+            last_index += 1
+            ranges[last_index] = ranges[i]
+        end
+    end
+    keepat!(ranges, 1:last_index)
+    return ranges
+end
+
+function Base.length(r::SparseRange)::Int sum(length.(r.subranges)) end
+function Base.first(r::SparseRange)::Int r.subranges[1][1] end
+
+function test()
+    sr = SparseRange([1:10])
+    println("|$sr| == $(length(sr))")
+    rms = [RangeMap(0:5, 20), RangeMap(6:10, 30)]
+    apply!(rms, sr)
+    println("|$sr| == $(length(sr))")
+end
+
+# test()
 solve()
