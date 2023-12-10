@@ -35,23 +35,16 @@ function enclosedarea(network::Network, pipe::Set{Coord})::Int
     # of horizontal pipes is enclosed by the pipe
     for y in eachindex(network)
         for x in eachindex(network[y])
-            print_char = nothing
             if (x, y) ∈ pipe
                 if iscarhor(getpipe(network, (x, y)), start_pipe)
                     horizontal_pipe_counts[x] += 1
                 end
-                print_char = getpipe(network, (x, y))
             else
                 if horizontal_pipe_counts[x] % 2 == 1
-                    print_char = 'X'
                     area += 1
-                else
-                    print_char = '.'
                 end
             end
-            print(print_char)
         end
-        println()
     end
     return area
 end
