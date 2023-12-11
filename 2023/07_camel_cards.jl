@@ -39,11 +39,11 @@ function rank(hand::Hand)::Int
         return 7
     elseif hasnojoke(counts, 4)
         return 6
-    elseif isfullhouse(counts, false)
+    elseif isfullhouse(counts)
         return 5
     elseif hasnojoke(counts, 3)
         return 4
-    elseif istwopair(counts, false)
+    elseif istwopair(counts)
         return 3
     elseif hasnojoke(counts, 2)
         return 2
@@ -53,20 +53,31 @@ end
 function jokerrank(hand::Hand)::Int
     counts = cardcount(hand)
     if haswithjoke(counts, 5)
-        return 70 - get(counts, 'J', 0)
+        return 7
     elseif haswithjoke(counts, 4)
-        return 60 - get(counts, 'J', 0)
-    elseif isfullhouse(counts, true)
-        return 50 - get(counts, 'J', 0)
+        return 6
+    elseif isjokerfullhouse(counts)
+        return 5
     elseif haswithjoke(counts, 3)
-        return 40 - get(counts, 'J', 0)
-    elseif istwopair(counts, true)
-        return 30 - get(counts, 'J', 0)
+        return 4
+    # joker two pair is impossible, as the joker would be used to make 3 of a kind
+    elseif istwopair(counts)
+        return 3
     elseif haswithjoke(counts, 2)
-        return 20 - get(counts, 'J', 0)
+        return 2
     end
-    return 10
+    return 1
 end
+
+const RANK_NAMES = Dict{Int, String}(
+    1 => "Nothing",
+    2 => "One pair",
+    3 => "Two pair",
+    4 => "Three of a kind",
+    5 => "Full house",
+    6 => "Four of a kind",
+    7 => "Five of a kind",
+)
 
 function hasnojoke(counts::CardsCounts, amount::Int)::Bool
     any(c -> c == amount, values(counts))
@@ -82,25 +93,30 @@ function haswithjoke(counts::CardsCounts, amount::Int)::Bool
     end
     return jc == amount
 end
-function isfullhouse(counts::CardsCounts, include_joker = false)::Bool
-    if include_joker
-        return haswithjoke(counts, 3) && haswithjoke(counts, 2)
-    end
+function isfullhouse(counts::CardsCounts)::Bool
     return hasnojoke(counts, 3) && hasnojoke(counts, 2)
 end
-function istwopair(counts::CardsCounts, include_joker = false)::Bool
-    jc = 0
-    if include_joker
-        jc = get(counts, 'J', 0)
-    end
-    pair_count = 0
+function isjokerfullhouse(counts::CardsCounts)::Bool
+    has_two = false
+    has_three = false
+    jc = get(counts, 'J', 0)
     for (card, count) in counts
-        if card == 'J' && count == 2
-            pair_count += 1
+        if card == 'J' continue end
+        if count + jc == 3
+            has_three = true
             jc = 0
         elseif count + jc == 2
-            pair_count += 1
+            has_two = true
             jc = 0
+        end
+    end
+    return has_three && has_two
+end
+function istwopair(counts::CardsCounts)::Bool
+    pair_count = 0
+    for (_, count) in counts
+        if count == 2
+            pair_count += 1
         end
     end
     return pair_count == 2
