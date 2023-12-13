@@ -3,7 +3,7 @@ function takematch(re::Regex, s::AbstractString)::Tuple{Union{RegexMatch,Nothing
     return _take(m, s)
 end
 
-function matrix(lines::Vector{T})::Matrix{Char} where {T<:AbstractString}
+function matrix(lines::AbstractArray{T})::Matrix{Char} where {T<:AbstractString}
     return reduce(vcat, permutedims.(collect.(lines)))
 end
 
