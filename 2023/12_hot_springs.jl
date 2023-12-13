@@ -17,14 +17,10 @@ function solve2(rows::Vector{Row})
 end
 
 function solverows(rows::Vector{Row}, proc=identity)
-    completed_rows = Threads.Atomic{Int}(0)
     total = Threads.Atomic{Int}(0)
     Threads.@threads for row in rows
         Threads.atomic_add!(total, groups(proc(row)))
-        Threads.atomic_add!(completed_rows, 1)
-        print("\r$(completed_rows[])/$(length(rows)) done")
     end
-    println()
     println(total[])
 end
 
