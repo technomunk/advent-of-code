@@ -23,7 +23,7 @@ function spliton(i::AbstractArray{T}, delim::T)::Vector{SubArray{T}} where {T}
     result = []
     prev_index = 1
     for idx in findall(x -> x == delim, i)
-        push!(result, view(i, prev_index:idx - 1))
+        push!(result, view(i, prev_index:idx-1))
         prev_index = idx + 1
     end
     push!(result, view(i, prev_index:length(i)))
@@ -34,13 +34,13 @@ struct Pairs{T}
     a::AbstractArray{T}
 end
 
-function Base.iterate(p::Pairs{T})::Union{Tuple{Tuple{T, T}, Tuple{Int, Int}}} where {T}
+function Base.iterate(p::Pairs{T})::Union{Tuple{Tuple{T,T},Tuple{Int,Int}}} where {T}
     if length(p.a) <= 1
         return nothing
     end
     return ((p.a[1], p.a[2]), (1, 3))
 end
-function Base.iterate(p::Pairs{T}, (a, b)::Tuple{Int, Int}) where {T}
+function Base.iterate(p::Pairs{T}, (a, b)::Tuple{Int,Int}) where {T}
     if b > lastindex(p.a)
         if a >= lastindex(p.a) - 1
             return nothing
@@ -54,4 +54,17 @@ end
 function Base.length(p::Pairs{T})::Int where {T}
     # triangle number
     return div(length(p.a) * (length(p.a) - 1), 2)
+end
+
+function printgrid(m::Matrix{Char})
+    println.(String.(eachrow(m)))
+end
+
+function indexof(collection, element::T)::Union{Int,Nothing} where {T}
+    for (i, el) in enumerate(collection)
+        if el == element
+            return i
+        end
+    end
+    return nothing
 end
