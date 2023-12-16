@@ -68,3 +68,13 @@ function indexof(collection, element::T)::Union{Int,Nothing} where {T}
     end
     return nothing
 end
+
+function initvector(n::Int, ctor)::Vector
+    result = Vector(undef, n)
+    for i in eachindex(result)
+        result[i] = ctor()
+    end
+    return result
+end
+
+Base.deleteat!(a::Vector{T}, ::Nothing) where {T} = identity
