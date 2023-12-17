@@ -78,3 +78,35 @@ function initvector(n::Int, ctor)::Vector
 end
 
 Base.deleteat!(a::Vector{T}, ::Nothing) where {T} = identity
+
+# A structure for efficiently fetching the element with the smallest priority
+struct MinQueue{T,N<:Number}
+    buckets::Vector{Tuple{N,Vector{T}}}
+end
+MinQueue{T,N}() where {T,N<:Number} = MinQueue(Vector{Tuple{N,Vector{T}}}())
+
+function Base.push!(q::MinQueue{T,N}, val::T, prio::N)::MinQueue{T,N} where {T,N<:Number}
+    idx = findfirst(b -> b[1] <= prio, q.buckets)
+    if isnothing(idx)
+        push!(q.buckets, (prio, [val]))
+        return q
+    end
+    if q.buckets[idx][1] == prio
+        push!(q.buckets[idx][2], val)
+        return q
+    end
+    insert!(q.buckets, idx, (prio, [val]))
+    return q
+end
+function Base.pop!(q::MinQueue{T})::Union{T,Nothing} where {T}
+    if isempty(q.buckets)
+        return Nothing
+    end
+    result = pop!(q.buckets[end][2])
+    if isempty(q.buckets[end][2])
+        pop!(q.buckets)
+    end
+    return result
+end
+
+Base.isempty(q::MinQueue)::Bool = isempty(q.buckets)
