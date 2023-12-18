@@ -71,11 +71,12 @@ Line = Tuple{Point2, Point2}
 
 function area(p::Polygon, linearea)::Int
     # https://en.wikipedia.org/wiki/Shoelace_formula
+    # https://en.wikipedia.org/wiki/Pick%27s_theorem
     result = 0
     for line in Lines(p)
         result += linearea(line) + length(line)
     end
-    return div(result, 2)
+    return div(result, 2) + 1
 end
 function counterclockwisearea(l::Line)::Int
     x1, y1 = l[1]
@@ -118,7 +119,7 @@ function area(ops::AbstractVector{Operation})::Int
     for op in ops
         push!(polygon, op)
     end
-    return max(area(polygon, counterclockwisearea), area(polygon, clockwisearea)) + 1
+    return max(area(polygon, counterclockwisearea), area(polygon, clockwisearea))
 end
 
 solve()
