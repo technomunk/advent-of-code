@@ -69,23 +69,23 @@ end
 
 Line = Tuple{Point2, Point2}
 
-function area(p::Polygon, linearea)
+function area(p::Polygon, linearea)::Int
     # https://en.wikipedia.org/wiki/Shoelace_formula
-    result = 0.0
+    result = 0
     for line in Lines(p)
-        result += linearea(line) + length(line) / 2
+        result += linearea(line) + length(line)
     end
-    return result
+    return div(result, 2)
 end
-function counterclockwisearea(l::Line)
+function counterclockwisearea(l::Line)::Int
     x1, y1 = l[1]
     x2, y2 = l[2]
-    return ((x1*y2 - y1*x2) / 2)
+    return (x1*y2 - y1*x2)
 end
-function clockwisearea(l::Line)
+function clockwisearea(l::Line)::Int
     x2, y2 = l[1]
     x1, y1 = l[2]
-    return ((x1*y2 - y1*x2) / 2)
+    return (x1*y2 - y1*x2)
 end
 Base.length(l::Line)::Int = sum(abs.(l[2] .- l[1]))
 
@@ -121,5 +121,4 @@ function area(ops::AbstractVector{Operation})::Int
     return max(area(polygon, counterclockwisearea), area(polygon, clockwisearea)) + 1
 end
 
-# println(counterclockwisearea(((1, 6), (3, 1))))
 solve()
