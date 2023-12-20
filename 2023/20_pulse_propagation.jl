@@ -189,16 +189,14 @@ end
 # High level solution
 function solve()
     network = parse(Network, readlines())
+    sendn!(network, LOW, 1000) |> prod |> println
+    reset!(network)
     cycles = Vector{Int}()
     for n in ["mh", "zz", "cm", "kd"]
         push!(cycles, cycleof!(network, network[n]))
         reset!(network)
     end
-    display(cycles)
     println(lcm(cycles))
-    # sendn!(network, LOW, 1000) |> prod |> println
-    # reset!(network)
-    # presses!(network) |> println
 end
 
 
