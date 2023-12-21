@@ -7,6 +7,48 @@ function matrix(lines::AbstractArray{T})::Matrix{Char} where {T<:AbstractString}
     return reduce(vcat, permutedims.(collect.(lines)))
 end
 
+function printgrid(m::Matrix{Char})
+    println.(String.(eachrow(m)))
+end
+Point2 = Tuple{Int,Int}
+function coordof(m::Matrix{T}, val::T)::Union{Point2,Nothing} where {T}
+    h, w = size(m)
+    for y = 1:h, x in 1:w
+        if m[y, x] == val
+            return y, x
+        end
+    end
+    return nothing
+end
+function coordsof(m::Matrix{T}, val::T)::Vector{Point2} where {T}
+    result = Vector{Point2}()
+    h,w = size(m)
+    for y = 1:h, x in 1:w
+        if m[y, x] == val
+            push!(result, (y, x))
+        end
+    end
+    return result
+end
+
+function neighborcoords(m::Matrix, (y, x)::Point2)::Vector{Point2}
+    result = Vector{Point2}()
+    h,w = size(m)
+    if x > 1
+        push!(result, (y, x - 1))
+    end
+    if x < w
+        push!(result, (y, x + 1))
+    end
+    if y > 1
+        push!(result, (y - 1, x))
+    end
+    if y < h
+        push!(result, (y + 1, x))
+    end
+    return result
+end
+
 function neighborindicies(m::AbstractArray{T,N}, n::Int, i::Int)::UnitRange where {T,N}
     return max(1, i - 1):min(size(m, n), i + 1)
 end
@@ -54,10 +96,6 @@ end
 function Base.length(p::Pairs{T})::Int where {T}
     # triangle number
     return div(length(p.a) * (length(p.a) - 1), 2)
-end
-
-function printgrid(m::Matrix{Char})
-    println.(String.(eachrow(m)))
 end
 
 function indexof(collection, element::T)::Union{Int,Nothing} where {T}
@@ -110,3 +148,5 @@ function Base.pop!(q::MinQueue{T})::Union{T,Nothing} where {T}
 end
 
 Base.isempty(q::MinQueue)::Bool = isempty(q.buckets)
+
+eq(val) = x -> x == val
