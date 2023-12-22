@@ -76,24 +76,6 @@ struct Neighborhood
     bricks_below::Dict{Int,Set{Int}}
 end
 
-
-BrickSpace = Array{Int,3}
-
-function brickspace(bricks::AbstractVector{Brick})::BrickSpace
-    size_z, size_y, size_x = 0, 0, 0
-    for brick in bricks
-        size_x = max(size_x, brick.x[end]) + 1
-        size_y = max(size_y, brick.y[end]) + 1
-        size_z = max(size_z, brick.z[end]) + 1
-    end
-
-    space = zeros(Int, size_z, size_y, size_x)
-    for (i, brick) in enumerate(bricks)
-        space[brick] .= i
-    end
-    return space
-end
-
 function calc_neighborhood(bricks::AbstractVector{Brick})::Neighborhood
     bricks_above = Dict{Int,Set{Int}}()
     bricks_below = Dict{Int,Set{Int}}()
