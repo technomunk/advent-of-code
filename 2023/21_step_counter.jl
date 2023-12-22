@@ -19,7 +19,7 @@ function solve2(grid::Map, total_steps::Int)::Int
     grid_size = size(grid)[1]
 
     even_corners = count(takesmorethan(grid_size ÷ 2, iseven), step_indices)
-    odd_corners = count(takesmorethan(grid_size ÷ 2, iseven), step_indices)
+    odd_corners = count(takesmorethan(grid_size ÷ 2, isodd), step_indices)
     even_steps = count(isstep(iseven), step_indices)
     odd_steps = count(isstep(isodd), step_indices)
 
@@ -30,13 +30,13 @@ function solve2(grid::Map, total_steps::Int)::Int
     # are inerested in. N is the number of grids in one direction, ie
     # half the length of the square
     if iseven(n)
-        return n * n * even_steps +
-               (n + 1) * n * odd_steps -
+        return (n + 1) * n * odd_steps +
+               n * n * even_steps -
                (n + 1) * odd_corners +
                n * even_corners
     else
-        return n * n * odd_steps +
-               (n + 1) * n * even_steps -
+        return (n + 1) * n * even_steps +
+               n * n * odd_steps -
                (n + 1) * even_corners +
                n * odd_corners
     end
