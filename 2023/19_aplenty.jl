@@ -3,7 +3,7 @@ include("utils.jl")
 # Helper structs
 
 struct Rule
-    param::Union{Char, Nothing}
+    param::Union{Char,Nothing}
     op::Char
     val::Int
     target::String
@@ -46,10 +46,10 @@ function apply(r::Rule, i::Item)::Union{String,Nothing}
     return nothing
 end
 function shrinksplit(ic::ItemClass, r::Rule)
+    # returns (passing, failing) tuple
     if isnothing(r.param)
         return copy(ic), nothing
     end
-    # returns (passing, failing) tuple
     class_range = ic[r.param]
     if r.op == '<'
         if class_range[end] < r.val

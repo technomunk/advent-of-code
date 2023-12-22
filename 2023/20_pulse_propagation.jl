@@ -161,12 +161,6 @@ function printmermaid(network::Network)
         end
     end
 end
-function Base.findall(node_type::Type{<:Node}, network::Network)::Vector{String}
-    return [key for (key, val) in network if isa(val, node_type)]
-end
-
-function secondorder()
-end
 
 function cycleof!(network::Network, node::Conjunction)::Int
     seen_high = Dict{String,Bool}(key => false for key in keys(node.state))
@@ -183,7 +177,7 @@ function cycleof!(network::Network, node::Conjunction)::Int
             end
         end
     end
-    return maximum(values(cycles))
+    return values(cycles) |> maximum
 end
 
 # High level solution
