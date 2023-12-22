@@ -11,88 +11,35 @@ const STONE = -1
 function solve()
     grid = matrix(readlines())
     count(isnthstep(64), steps(grid, 'S')) |> println
-    solve2(grid) |> println
+    solve2(grid, 26_501_365) |> println
 end
 
-Base.Enums.@enum GridDir begin
-    CENTER
-    NORTH
-    NORTH_EAST
-    EAST
-    SOUTH_EAST
-    SOUTH
-    SOUTH_WEST
-    WEST
-    NORTH_WEST
-end
+function solve2(grid::Map, total_steps::Int)::Int
+    step_indices = steps(grid, 'S')
+    grid_size = size(grid)[1]
 
-const TOTAL_STEPS = 26501365
+    even_corners = count(takesmorethan(grid_size ÷ 2, iseven), step_indices)
+    odd_corners = count(takesmorethan(grid_size ÷ 2, iseven), step_indices)
+    even_steps = count(isstep(iseven), step_indices)
+    odd_steps = count(isstep(isodd), step_indices)
 
-function solve2(grid::Map)::Int
-    # Observation: the column and row with the start in the real input are empty
-    # which means that reaching a neighboring grid clone takes (size(grid).-1) ./ 2 steps
-    height, width = size(grid)
-    start_y, start_x = coordof(grid, 'S')
+    n = (total_steps - grid_size ÷ 2) ÷ grid_size
 
-    north_steps = start_y - 1
-    south_steps = height - start_y
-    east_steps = width - start_x
-    west_steps = start_x - 1
-
-    step_indices = Dict{GridDir,Steps}(
-        CENTER => steps(grid, (start_y, start_x)),
-        NORTH => steps(grid, (height, start_x)), # start at bottom center
-        NORTH_EAST => steps(grid, (height, 1)),  # start at bottom left
-        EAST => steps(grid, (start_y, 1)),  # start at center left
-        SOUTH_EAST => steps(grid, (1, 1)),  # start at top left
-        SOUTH => steps(grid, (1, start_x)),  # start at top center
-        SOUTH_WEST => steps(grid, (1, width)),  # start at top right
-        WEST => steps(grid, (start_y, width)),  # start at center right
-        NORTH_WEST => steps(grid, (height, width)),  # start at bottom right
-    )
-
-    # map the direction of the grid with its relevant neighbors and the number of steps to reach said neighbor
-    # the "relevant" neighbors are chosen such that there is only 1 way to reach a given neighbor (except from center)
-    neighbors = Dict{GridDir,Vector{Tuple{GridDir,Int}}}(
-        CENTER => [(NORTH, north_steps), (EAST, east_steps), (SOUTH, south_steps), (WEST, west_steps)],
-        NORTH => [(NORTH_WEST, west_steps), (NORTH, height)],
-        NORTH_EAST => [(NORTH_EAST, height)],
-        EAST => [(NORTH_EAST, north_steps), (EAST, width)],
-        SOUTH_EAST => [(SOUTH_EAST, width)],
-        SOUTH => [(SOUTH_EAST, east_steps), (SOUTH, height)],
-        SOUTH_WEST => [(SOUTH_WEST, height)],
-        WEST => [(SOUTH_WEST, south_steps), (WEST, width)],
-        NORTH_WEST => [(NORTH_WEST, width)],
-    )
-
-    reachable_plots = 0
-
-    grids = [(CENTER, 0)]
-    next_grids = []
-
-    last_printed_threshold = 0
-
-    while !isempty(grids)
-        empty!(next_grids)
-        for (dir, made_steps) in grids
-            reachable_plots += count(isnthstep(TOTAL_STEPS - made_steps), step_indices[dir])
-            for (neighbor_dir, dist_to_neighbor) in neighbors[dir]
-                steps_to_neighbor = made_steps + dist_to_neighbor
-                if made_steps + dist_to_neighbor < TOTAL_STEPS
-                    push!(next_grids, (neighbor_dir, steps_to_neighbor))
-                end
-                if steps_to_neighbor - last_printed_threshold >= 1000
-                    print("\r$steps_to_neighbor steps")
-                    last_printed_threshold = steps_to_neighbor
-                end
-            end
-        end
-        empty!(grids)
-        append!(grids, next_grids)
+    # the clones form a diamond, with repeating odd-even layers
+    # as a diamond is a rotated square - there are a square number of grids we
+    # are inerested in. N is the number of grids in one direction, ie
+    # half the length of the square
+    if iseven(n)
+        return n * n * even_steps +
+               (n + 1) * n * odd_steps -
+               (n + 1) * odd_corners +
+               n * even_corners
+    else
+        return n * n * odd_steps +
+               (n + 1) * n * even_steps -
+               (n + 1) * even_corners +
+               n * odd_corners
     end
-    println()
-
-    return reachable_plots
 end
 
 const INIT_STEPS = Dict{Char,Int}(
@@ -126,7 +73,9 @@ function steps(grid::Map, start::Union{Point,Char})::Steps
     return step_indices
 end
 
-isnthstep(n::Int) = x -> (0 < x <= n) && isodd(x) == isodd(n)
+isnthstep(n::Int) = x -> (x != STONE) && (x <= n) && isodd(x) == isodd(n)
+isstep(parity) = x -> (x != STONE) && parity(x)
+takesmorethan(n::Int, parity) = x -> (x != STONE) && (x > n) && parity(x)
 
 function printstep(grid::Matrix{Union{Int,Nothing}}, n::Int)
     for row in eachrow(grid)
