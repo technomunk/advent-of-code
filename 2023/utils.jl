@@ -3,48 +3,60 @@ function takematch(re::Regex, s::AbstractString)::Tuple{Union{RegexMatch,Nothing
     return _take(m, s)
 end
 
+# 2D utilities
+
 function matrix(lines::AbstractArray{T})::Matrix{Char} where {T<:AbstractString}
     return reduce(vcat, permutedims.(collect.(lines)))
 end
 
-function printgrid(m::Matrix{Char})
-    println.(String.(eachrow(m)))
+function printgrid(m::Matrix{Char}; repl=identity)::Nothing
+    for row in eachrow(m)
+        for ch in row
+            print(repl(ch))
+        end
+        println("\e[0m")
+    end
 end
-Point2 = Tuple{Int,Int}
+
+Point2 = @NamedTuple{y::Int, x::Int}
+Base.convert(::Type{Point2}, (x, y)::NamedTuple{(:x, :y),Tuple{Int,Int}}) = (y=y, x=x)
+Base.repr(p::Point2) = "(x=$(p.x), y=$(p.y))"
+Base.:(-)(a::Point2, b::Point2) = (y=a.y - b.y, x=a.x - b.x)
+
 function coordof(m::Matrix{T}, val::T)::Union{Point2,Nothing} where {T}
     h, w = size(m)
     for y = 1:h, x in 1:w
         if m[y, x] == val
-            return y, x
+            return (x=x, y=y)
         end
     end
     return nothing
 end
 function coordsof(m::Matrix{T}, val::T)::Vector{Point2} where {T}
     result = Vector{Point2}()
-    h,w = size(m)
+    h, w = size(m)
     for y = 1:h, x in 1:w
         if m[y, x] == val
-            push!(result, (y, x))
+            push!(result, (x=x, y=y))
         end
     end
     return result
 end
 
-function neighborcoords(m::Matrix, (y, x)::Point2)::Vector{Point2}
+function neighborcoords(m::Matrix, (y, x)::Point2; test=_ -> true)::Vector{Point2}
     result = Vector{Point2}()
-    h,w = size(m)
-    if x > 1
-        push!(result, (y, x - 1))
+    h, w = size(m)
+    if x > 1 && test((y=y, x=x - 1))
+        push!(result, (y=y, x=x - 1))
     end
-    if x < w
-        push!(result, (y, x + 1))
+    if x < w && test((y=y, x=x + 1))
+        push!(result, (y=y, x=x + 1))
     end
-    if y > 1
-        push!(result, (y - 1, x))
+    if y > 1 && test((y=y - 1, x=x))
+        push!(result, (y=y - 1, x=x))
     end
-    if y < h
-        push!(result, (y + 1, x))
+    if y < h && test((y=y + 1, x=x))
+        push!(result, (y=y + 1, x=x))
     end
     return result
 end
