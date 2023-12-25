@@ -21,7 +21,9 @@ Rect2D{T<:Number} = Rect{T,2}
 Rect3D{T<:Number} = Rect{T,3}
 
 Base.iterate(p::Point2D{T}) where {T} = (p.x, p.y)
-Base.iterate(::Point2D{T}, state::T) where {T} = (state, nothing)
+function Base.iterate(::Point2D{T}, state::Union{T,Nothing})::Union{Tuple{T,Nothing},Nothing} where {T}
+    return isnothing(state) ? nothing : (state, nothing)
+end
 
 Base.iterate(p::Point3D{T}) where {T} = (p.x, 1)
 function Base.iterate(p::Point3D{T}, state::Int)::Union{Tuple{T,Int},Nothing} where {T}
@@ -75,30 +77,30 @@ function coordof(m::Matrix{T}, val::T)::Union{Point2D{Int},Nothing} where {T}
     return nothing
 end
 function coordsof(m::Matrix{T}, val::T)::Vector{Point2D{Int}} where {T}
-    result = Vector{Point2D}()
+    result = Vector{Point2D{Int}}()
     h, w = size(m)
     for y = 1:h, x in 1:w
         if m[y, x] == val
-            push!(result, (x=x, y=y))
+            push!(result, Point2D{Int}(x, y))
         end
     end
     return result
 end
 
-function neighborcoords(m::Matrix, (y, x)::Point2D{Int}; test=_ -> true)::Vector{Point2D{Int}}
-    result = Vector{Point2D}()
+function neighborcoords(m::Matrix, (x, y)::Point2D{Int}; test=_ -> true)::Vector{Point2D{Int}}
+    result = Vector{Point2D{Int}}()
     h, w = size(m)
-    if x > 1 && test((y=y, x=x - 1))
-        push!(result, (y=y, x=x - 1))
+    if x > 1 && test((x=x - 1, y=y))
+        push!(result, (x=x - 1, y=y))
     end
-    if x < w && test((y=y, x=x + 1))
-        push!(result, (y=y, x=x + 1))
+    if x < w && test((x=x + 1, y=y))
+        push!(result, (x=x + 1, y=y))
     end
-    if y > 1 && test((y=y - 1, x=x))
-        push!(result, (y=y - 1, x=x))
+    if y > 1 && test((x=x, y=y - 1))
+        push!(result, (x=x, y=y - 1))
     end
-    if y < h && test((y=y + 1, x=x))
-        push!(result, (y=y + 1, x=x))
+    if y < h && test((x=x, y=y + 1))
+        push!(result, (x=x, y=y + 1))
     end
     return result
 end
