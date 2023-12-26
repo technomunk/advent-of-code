@@ -11,9 +11,9 @@ struct Play
     bid::Int
 end
 
-function parse(::Type{Play}, line::AbstractString)::Play
+function Base.parse(::Type{Play}, line::AbstractString)::Play
     hand, bid = split(line, " ")
-    Play(hand, Base.parse(Int, bid))
+    Play(hand, parse(Int, bid))
 end
 
 function solve1(plays::AbstractArray{Play})

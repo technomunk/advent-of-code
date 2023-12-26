@@ -1,14 +1,16 @@
 include("utils.jl")
+include("geometry.jl")
 
 Map = Matrix{Char}
-Path = Vector{Point2}
+Pt2 = Point2D{Int}
+Path = Vector{Pt2}
 
 const PATHS_ARG = "--paths"
 const GRAPH_ARG = "--graph"
 const MERMAID_ARG = "--mermaid"
 
 function solve()
-    map = matrix(readlines())
+    map = matrix(readlines("data/23e.txt"))
     graph = build_graph(map)
 
     if PATHS_ARG ∈ ARGS
@@ -31,19 +33,19 @@ function paths(map::Map, walkability_test)::Vector{Path}
     height = size(map)[1]
 
     paths::Vector{Path} = [[]]
-    navigators::Vector{Tuple{Int,Point2}} = [(1, (x=start_x, y=1))]
+    navigators::Vector{Tuple{Int,Pt2}} = [(1, Pt2(start_x, 1))]
 
     while !isempty(navigators)
         navigate!(map, paths, navigators, height, walkability_test)
     end
 
-    return filter!(p -> p[end][1] == height, paths)
+    return filter!(p -> p[end].y == height, paths)
 end
 
 function navigate!(
     map::Map,
     paths::Vector{Path},
-    navigators::Vector{Tuple{Int,Point2}},
+    navigators::Vector{Tuple{Int,Pt2}},
     height::Int,
     walkability_test,
 )::Nothing
@@ -65,30 +67,30 @@ function navigate!(
     return nothing
 end
 
-isnotstone(map::Map, ::Point2, to::Point2) = map[to...] != '#'
-function isdownhill(map::Map, from::Point2, to::Point2)::Bool
-    dy, dx = to - from
-    if dx == 0
-        if dy == 1
-            return map[to...] ∈ ('.', 'v')
+isnotstone(map::Map, ::Pt2, to::Pt2) = map[to] != '#'
+function isdownhill(map::Map, from::Pt2, to::Pt2)::Bool
+    delta = to - from
+    if delta.x == 0
+        if delta.y == 1
+            return map[to] ∈ ('.', 'v')
         else
-            return map[to...] ∈ ('.', '^')
+            return map[to] ∈ ('.', '^')
         end
-    elseif dx == 1
-        return map[to...] ∈ ('.', '>')
+    elseif delta.x == 1
+        return map[to] ∈ ('.', '>')
     else
-        return map[to...] ∈ ('.', '<')
+        return map[to] ∈ ('.', '<')
     end
 end
 
 struct Graph
-    start::Point2
-    finish::Point2
-    nodes::Dict{Point2,@NamedTuple{name::String, neighbors::Set{Point2}}}
-    edges::Dict{Tuple{Point2,Point2},Int}
-    Graph(start::Point2, finish::Point2) = new(start, finish, Dict(start => (name="START", neighbors=Set()), finish => (name="FINISH", neighbors=Set())), Dict())
+    start::Pt2
+    finish::Pt2
+    nodes::Dict{Pt2,@NamedTuple{name::String, neighbors::Set{Pt2}}}
+    edges::Dict{Tuple{Pt2,Pt2},Int}
+    Graph(start::Pt2, finish::Pt2) = new(start, finish, Dict(start => (name="START", neighbors=Set()), finish => (name="FINISH", neighbors=Set())), Dict())
 end
-Visitor = @NamedTuple{pos::Point2, from::Point2, dist::Int, prev::Point2}
+Visitor = @NamedTuple{pos::Pt2, from::Pt2, dist::Int, prev::Pt2}
 
 function Base.push!(graph::Graph, visitor::Visitor)::Graph
     known_dist = distance(graph, visitor.from, visitor.pos)
@@ -106,43 +108,42 @@ function Base.push!(graph::Graph, visitor::Visitor)::Graph
     push!(graph.nodes[visitor.pos].neighbors, visitor.from)
     return graph
 end
-function addnode!(graph::Graph, pos::Point2)::Nothing
+function addnode!(graph::Graph, pos::Pt2)::Nothing
     if pos ∈ keys(graph.nodes)
         return nothing
     end
-    graph.nodes[pos] = (name="n$(length(graph.nodes) - 1)", neighbors=Set{Point2}())
+    graph.nodes[pos] = (name="n$(length(graph.nodes) - 1)", neighbors=Set{Pt2}())
     return nothing
 end
 
 function build_graph(map::Map)::Graph
     start_x = indexin('.', (@view map[1, :]))[1]
-    start = (y=1, x=start_x)
+    start = Pt2(start_x, 1)
     finish_x = indexin('.', (@view map[end, :]))[1]
-    finish = (y=size(map)[1], x=finish_x)
+    finish = Pt2(finish_x, size(map)[1])
     result = Graph(start, finish)
 
-    visited_nodes = Set{Point2}()
     to_visit::Vector{Visitor} = [(pos=start, from=start, dist=0, prev=start)]
     while !isempty(to_visit)
-        visit!(map, visited_nodes, result, to_visit)
+        visit!(map, result, to_visit)
     end
     return result
 end
-function visit!(map::Map, visited_nodes::Set{Point2}, graph::Graph, to_visit::Vector{Visitor})::Nothing
+function visit!(map::Map, graph::Graph, to_visit::Vector{Visitor})::Nothing
     visitor = pop!(to_visit)
-    push!(visited_nodes, visitor.pos)
     if visitor.pos == graph.finish
         push!(graph, visitor)
         return nothing  # reached the end
     end
 
-    neighbors = neighborcoords(map, visitor.pos, test=p -> (p != visitor.prev) && (map[p...] != '#'))
+    neighbors = neighborcoords(map, visitor.pos, test=p -> (p != visitor.prev) && (map[p] != '#'))
     if length(neighbors) == 1
         neighbor = neighbors[1]
         if neighbor ∈ keys(graph.nodes)
             push!(graph, (pos=neighbor, from=visitor.from, dist=visitor.dist + 1, prev=visitor.pos))
             return nothing
         end
+        # follow straight paths without modifying the graph
         push!(to_visit, (pos=neighbor, from=visitor.from, dist=visitor.dist + 1, prev=visitor.pos))
         return nothing
     end
@@ -154,7 +155,7 @@ function visit!(map::Map, visited_nodes::Set{Point2}, graph::Graph, to_visit::Ve
     return nothing
 end
 
-distance(graph::Graph, a::Point2, b::Point2)::Int = get(graph.edges, (a, b), get(graph.edges, (b, a), -1))
+distance(graph::Graph, a::Pt2, b::Pt2)::Int = get(graph.edges, (a, b), get(graph.edges, (b, a), -1))
 function distance(graph::Graph, path::Path)::Int
     result = 0
     for (a, b) in zip(path[1:end-1], path[2:end])
@@ -165,7 +166,7 @@ end
 
 function longest_path(graph::Graph)::Int
     paths::Vector{Path} = [[]]
-    navigators::Vector{Tuple{Int,Point2}} = [(1, graph.start)]
+    navigators::Vector{Tuple{Int,Pt2}} = [(1, graph.start)]
 
     while !isempty(navigators)
         navigate!(graph, paths, navigators)
@@ -174,7 +175,7 @@ function longest_path(graph::Graph)::Int
     filter!(p -> p[end] == graph.finish, paths)
     return maximum(p -> distance(graph, p), paths)
 end
-function navigate!(graph::Graph, paths::Vector{Path}, navigators::Vector{Tuple{Int,Point2}})::Nothing
+function navigate!(graph::Graph, paths::Vector{Path}, navigators::Vector{Tuple{Int,Pt2}})::Nothing
     index, pos = pop!(navigators)
     push!(paths[index], pos)
     if pos == graph.finish
@@ -194,13 +195,13 @@ end
 
 function impose!(map::Map, path::Path)::Map
     for (i, pos) in enumerate(path)
-        map[pos...] = Char(i % 10 + 48)
+        map[pos] = Char(i % 10 + 48)
     end
     return map
 end
 function impose!(map::Map, graph::Graph)::Map
     for (pos, (name, _)) in graph.nodes
-        map[pos...] = to_char(name)
+        map[pos] = to_char(name)
     end
     return map
 end
@@ -274,4 +275,5 @@ function printgraph(graph::Graph)
         println("$(graph.nodes[from].name) <--> $(graph.nodes[to].name) : $d")
     end
 end
+
 solve()

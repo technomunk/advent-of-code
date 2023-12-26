@@ -1,7 +1,5 @@
 include("utils.jl")
 
-using Printf
-
 function solve()
     grid = parse.(Int, matrix(readlines()))
     solve1(grid)

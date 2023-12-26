@@ -21,7 +21,7 @@ function solve2(instructions::String, graph::Graph)
     println(lcm(cycles))
 end
 
-function parse(::Type{Graph}, lines::Vector{String})::Graph
+function Base.parse(::Type{Graph}, lines::Vector{String})::Graph
     nodes = Dict{String,Node}()
     for line in lines
         name, paths = split(line, " = ")

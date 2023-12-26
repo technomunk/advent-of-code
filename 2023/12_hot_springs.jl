@@ -29,9 +29,9 @@ function x5(row::Row)::Row
     Row(join(repeat([row.pattern], 5), '?'), repeat(row.counts, 5))
 end
 
-function parse(::Type{Row}, line::AbstractString)::Row
+function Base.parse(::Type{Row}, line::AbstractString)::Row
     pattern, counts = split(line, ' ')
-    counts = Base.parse.(Int, split(counts, ','))
+    counts = parse.(Int, split(counts, ','))
     return Row(pattern, counts)
 end
 

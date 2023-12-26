@@ -12,9 +12,7 @@ function solve1(times::AbstractVector{Int}, distances::AbstractVector{Int})
         println
 end
 
-function solve2(time::Int, distance::Int)
-    countwintimes(time, distance) |> println
-end
+solve2(time::Int, distance::Int) = countwintimes(time, distance) |> println
 
 function countwintimes(time::Int, distance::Int)::Int
     for t = 0:time

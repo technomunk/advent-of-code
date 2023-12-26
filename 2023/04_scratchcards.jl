@@ -12,9 +12,7 @@ struct Card
     have::Vector{String}
 end
 
-function solve1(cards::Vector{Card})
-    cards .|> points |> sum |> println   
-end
+solve1(cards::Vector{Card}) =cards .|> points |> sum |> println   
 
 function solve2(cards::Vector{Card})
     card_instances = fill!(similar(cards, Int), 1)
@@ -27,13 +25,13 @@ function solve2(cards::Vector{Card})
 end
 
 
-function parse(::Type{Card}, s::AbstractString)::Card
+function Base.parse(::Type{Card}, s::AbstractString)::Card
     id, s = takematch(r"Card \s*(\d+): ", s)
     halves = split.(split(s, " | "), " ") .|> h -> filter!(n -> !isempty(n), h)
     return Card(id[1], halves...)
 end
 
-function overlap(card::Card)::Int count(in(card.winning), card.have) end
+overlap(card::Card)::Int = count(in(card.winning), card.have)
 function points(card::Card)::Int
     o = overlap(card)
     if o == 0

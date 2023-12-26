@@ -1,5 +1,4 @@
 include("utils.jl")
-using Dates
 
 function solve()
     grid = matrix(readlines())

@@ -53,8 +53,10 @@ Base.:(>)(a::Point{T,N}, b::Point{T,N}) where {T,N} = all(a .> b)
 Base.:(>=)(a::Point{T,N}, b::Point{T,N}) where {T,N} = all(a .>= b)
 Base.:(/)(a::Point{T,N}, b::T) where {T,N} = Point{T,N}((a ./ Ref(b))...)
 
-Base.to_index(::AbstractArray{T,3}, p::Point3D{Int}) where {T} = CartesianIndex(p.z, p.y, p.x)
-Base.to_index(::AbstractArray{T,2}, p::Point2D{Int}) where {T} = CartesianIndex(p.y, p.x)
+Base.getindex(a::AbstractArray{TVal,3}, p::Point3D{TInd}) where {TVal,TInd<:Integer} = getindex(a, p.z, p.y, p.x)
+Base.setindex!(a::AbstractArray{TVal,3}, val::TVal, p::Point3D{TInd}) where {TVal,TInd<:Integer} = setindex!(a, val, p.z, p.y, p.x)
+Base.getindex(a::AbstractArray{TVal,2}, p::Point2D{TInd}) where {TVal,TInd<:Integer} = getindex(a, p.y, p.x)
+Base.setindex!(a::AbstractArray{TVal,2}, val::TVal, p::Point2D{TInd}) where {TVal,TInd<:Integer} = setindex!(a, val, p.y, p.x)
 
 Base.:(∈)(p::Point{T,N}, r::Rect{T,N}) where {T,N} = all(r.min_corner .<= p .<= r.max_corner)
 
@@ -87,20 +89,26 @@ function coordsof(m::Matrix{T}, val::T)::Vector{Point2D{Int}} where {T}
     return result
 end
 
-function neighborcoords(m::Matrix, (x, y)::Point2D{Int}; test=_ -> true)::Vector{Point2D{Int}}
+function neighborcoords(m::Matrix, pt::Point2D{Int}; test=_ -> true)::Vector{Point2D{Int}}
     result = Vector{Point2D{Int}}()
     h, w = size(m)
-    if x > 1 && test((x=x - 1, y=y))
-        push!(result, (x=x - 1, y=y))
+    if pt.x > 1
+        _push_if_test_passes!(result, Pt2(pt.x - 1, pt.y), test)
     end
-    if x < w && test((x=x + 1, y=y))
-        push!(result, (x=x + 1, y=y))
+    if pt.x < w
+        _push_if_test_passes!(result, Pt2(pt.x + 1, pt.y), test)
     end
-    if y > 1 && test((x=x, y=y - 1))
-        push!(result, (x=x, y=y - 1))
+    if pt.y > 1
+        _push_if_test_passes!(result, Pt2(pt.x, pt.y - 1), test)
     end
-    if y < h && test((x=x, y=y + 1))
-        push!(result, (x=x, y=y + 1))
+    if pt.y < h
+        _push_if_test_passes!(result, Pt2(pt.x, pt.y + 1), test)
     end
     return result
+end
+
+function _push_if_test_passes!(v::Vector{Point2D{Int}}, pt::Point2D{Int}, test)
+    if test(pt)
+        push!(v, pt)
+    end
 end

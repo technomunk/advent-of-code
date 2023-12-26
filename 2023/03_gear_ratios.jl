@@ -17,17 +17,8 @@ function solve1(grid::Matrix{Char})
     return total
 end
 
-function solve2(grid::Matrix{Char})::Int
-    gears(grid) |> sum
-end
-
-function as01(b::Bool)::Char
-    if b
-        '1'
-    else
-        '0'
-    end
-end
+solve2(grid::Matrix{Char})::Int = gears(grid) |> sum
+as01(b::Bool)::Char = b ? '1' : '0'
 
 const IGNORED_CHARS = Set(".1234567890")
 
@@ -83,7 +74,7 @@ function grabnums(row::AbstractArray{Char}, is_part::AbstractArray{Bool})::Vecto
     return nums
 end
 
-function gears(grid::Matrix{Char})::Array{Int, 1}
+function gears(grid::Matrix{Char})::Vector{Int}
     gears = Int[]
     for (y, row) in enumerate(eachrow(grid))
         for (x, ch) in enumerate(row)

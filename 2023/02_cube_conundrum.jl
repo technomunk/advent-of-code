@@ -1,4 +1,4 @@
-import Base.parse
+include("utils.jl")
 
 struct Draw
     red::Int
@@ -14,15 +14,7 @@ end
 const COLOR_RE = r"(\d+) (red|green|blue)"
 const DRAW_REF = Draw(12, 13, 14)
 
-function takematch(re::Regex, s::T)::Tuple{Union{RegexMatch,Nothing},T} where {T<:AbstractString}
-    m = match(re, s)
-    if !isnothing(m)
-        s = chop(s, head=m.offset + length(m.match) - 1, tail=0)
-    end
-    return m, s
-end
-
-function parse(::Type{Draw}, s::AbstractString)::Draw
+function Base.parse(::Type{Draw}, s::AbstractString)::Draw
     red = 0
     green = 0
     blue = 0
@@ -42,7 +34,7 @@ function parse(::Type{Draw}, s::AbstractString)::Draw
     return Draw(red, green, blue)
 end
 
-function parse(::Type{Game}, s::AbstractString)::Game
+function Base.parse(::Type{Game}, s::AbstractString)::Game
     m, s = takematch(r"Game (\d+): ", s)
     id = parse(Int, m[1])
     draws = split(s, ";") .|> (d -> parse(Draw, d))
@@ -52,25 +44,18 @@ function parse(::Type{Game}, s::AbstractString)::Game
     return Game(id, Draw(max_red, max_green, max_blue))
 end
 
-function is_possible(ref::Draw, game::Draw)::Bool
-    return ref.red >= game.red && ref.green >= game.green && ref.blue >= game.blue
-end
+is_possible(ref::Draw, game::Draw)::Bool = ref.red >= game.red && ref.green >= game.green && ref.blue >= game.blue
+is_possible(ref::Draw, game::Game)::Bool = is_possible(ref, game.draw)
 
-function is_possible(ref::Draw, game::Game)::Bool
-    return is_possible(ref, game.draw)
-end
-
-function power(g::Game)::Int
-    return g.draw.red * g.draw.green * g.draw.blue
-end
+power(g::Game)::Int = g.draw.red * g.draw.green * g.draw.blue
 
 function solve()
     lines = readlines()
     games = lines .|> l -> parse(Game, l)
     filter(g -> is_possible(DRAW_REF, g), games) .|>
-        (g -> g.id) |>
-        sum |>
-        println
+    (g -> g.id) |>
+    sum |>
+    println
 
     games .|> power |> sum |> println
 end
