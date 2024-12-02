@@ -84,10 +84,8 @@ pub fn main() !void {
     defer pair.deinit();
 
     var buffer: [64]u8 = undefined;
-    var line = try readLine(stdin, &buffer);
-    while (line != null) {
-        try pair.parseLine(line.?);
-        line = try readLine(stdin, &buffer);
+    while (try readLine(stdin, &buffer)) |line| {
+        try pair.parseLine(line);
     }
 
     try stdout.print("P1: {}\nP2: {}\n", .{ pair.solveP1(), try pair.solveP2() });
