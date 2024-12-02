@@ -5,51 +5,40 @@ fn Reports(comptime T: type, comptime MAX_LEN: usize) type {
     return struct {
         const Self = @This();
 
-        values: std.ArrayList(std.ArrayList(T)),
+        p1: T,
+        p2: T,
 
-        fn init(allocator: anytype) Self {
+        pub fn init(_: anytype) Self {
             return Self{
-                .values = std.ArrayList(std.ArrayList(T)).init(allocator),
+                .p1 = 0,
+                .p2 = 0,
             };
         }
 
-        fn parseLine(self: *Self, line: []const u8) !void {
+        pub fn deinit(_: *Self) void {}
+
+        pub fn processLine(self: *Self, line: []const u8) !void {
             var values = std.mem.splitSequence(u8, line, " ");
-            var line_vals = std.ArrayList(T).init(self.values.allocator);
+            var report: [MAX_LEN]T = undefined;
+            var index: usize = 0;
             while (values.next()) |val| {
-                const value = try std.fmt.parseInt(T, val, 10);
-                try line_vals.append(value);
+                report[index] = try std.fmt.parseInt(T, val, 10);
+                index += 1;
             }
-            try self.values.append(line_vals);
+            if (_isSafe(report[0..index])) {
+                self.p1 += 1;
+                self.p2 += 1;
+            } else if (_isSafeRemovingOne(report[0..index])) {
+                self.p2 += 1;
+            }
         }
 
-        fn deinit(self: *Self) void {
-            for (self.values.items) |line| {
-                line.deinit();
-            }
-            self.values.deinit();
+        pub fn solveP1(self: *Self) T {
+            return self.p1;
         }
 
-        fn solveP1(self: *Self) T {
-            var total: T = 0;
-            for (self.values.items) |line| {
-                if (!_isSafe(line.items)) {
-                    continue;
-                }
-                total += 1;
-            }
-            return total;
-        }
-
-        fn solveP2(self: *Self) T {
-            var total: T = 0;
-            for (self.values.items) |line| {
-                if (!_isSafe(line.items) and !_isSafeRemovingOne(line.items)) {
-                    continue;
-                }
-                total += 1;
-            }
-            return total;
+        pub fn solveP2(self: *Self) T {
+            return self.p2;
         }
 
         fn _isSafe(line: []const T) bool {
@@ -89,23 +78,5 @@ fn Reports(comptime T: type, comptime MAX_LEN: usize) type {
 }
 
 pub fn main() !void {
-    const stdin = std.io.getStdIn().reader();
-    const stdout = std.io.getStdOut().writer();
-
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-    defer {
-        _ = gpa.deinit();
-    }
-
-    var reports = Reports(u32, 16).init(allocator);
-    defer reports.deinit();
-
-    var buffer: [64]u8 = undefined;
-
-    while (try util.readLine(stdin, &buffer)) |line| {
-        try reports.parseLine(line);
-    }
-
-    try stdout.print("P1: {}\nP2: {}\n", .{ reports.solveP1(), reports.solveP2() });
+    try util.execSolution(Reports(u32, 16));
 }
