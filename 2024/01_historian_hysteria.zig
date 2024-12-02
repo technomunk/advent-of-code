@@ -1,16 +1,7 @@
 const std = @import("std");
+const util = @import("util.zig");
 
 const ValSeq = std.ArrayList(i32);
-
-fn readLine(reader: anytype, buffer: []u8) !?[]const u8 {
-    const line = (try reader.readUntilDelimiterOrEof(buffer, '\n')) orelse return null;
-    // trim annoying windows-only carriage return character
-    if (@import("builtin").os.tag == .windows) {
-        return std.mem.trimRight(u8, line, "\r");
-    } else {
-        return line;
-    }
-}
 
 fn SeqPair(comptime T: type) type {
     return struct {
@@ -84,7 +75,7 @@ pub fn main() !void {
     defer pair.deinit();
 
     var buffer: [64]u8 = undefined;
-    while (try readLine(stdin, &buffer)) |line| {
+    while (try util.readLine(stdin, &buffer)) |line| {
         try pair.parseLine(line);
     }
 
