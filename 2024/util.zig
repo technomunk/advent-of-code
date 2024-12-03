@@ -11,6 +11,7 @@ pub fn readLine(reader: anytype, buffer: []u8) !?[]const u8 {
 }
 
 pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
+    const startTs = std.time.milliTimestamp();
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     defer {
@@ -24,6 +25,7 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     const stdout = std.io.getStdOut().writer();
 
     var buffer: [buffer_len]u8 = undefined;
+    const setupTs = std.time.milliTimestamp();
     while (try readLine(stdin, &buffer)) |line| {
         try solution.processLine(line);
     }
@@ -32,7 +34,24 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
         solution.finalizeInput();
     }
 
-    try stdout.print("P1: {}\nP2: {}\n", .{ solution.solveP1(), solution.solveP2() });
+    const inputTs = std.time.milliTimestamp();
+    const p1 = solution.solveP1();
+    const p1Ts = std.time.milliTimestamp();
+    const p2 = solution.solveP2();
+
+    const finalTs = std.time.milliTimestamp();
+    try stdout.print("P1: {}\nP2: {}\n\n", .{ p1, p2 });
+
+    try stdout.print(
+        "Setup  : {}ms\nInput  : {}ms\nP1 time: {}ms\nP2 time: {}ms\nTotal  : {}ms\n",
+        .{
+            setupTs - startTs,
+            inputTs - setupTs,
+            p1Ts - inputTs,
+            finalTs - p1Ts,
+            finalTs - startTs,
+        },
+    );
 }
 
 pub fn indexOfFirst(comptime T: type, haystack: []const T, start_index: usize, values: []const []const T) ?struct { pos: usize, idx: usize } {
