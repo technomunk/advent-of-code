@@ -40,10 +40,8 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     const p2 = solution.solveP2();
 
     const finalTs = std.time.milliTimestamp();
-    try stdout.print("P1: {}\nP2: {}\n\n", .{ p1, p2 });
-
     try stdout.print(
-        "Setup  : {}ms\nInput  : {}ms\nP1 time: {}ms\nP2 time: {}ms\nTotal  : {}ms\n",
+        "Setup  : {}ms\nInput  : {}ms\nP1 time: {}ms\nP2 time: {}ms\nTotal  : {}ms\n\n",
         .{
             setupTs - startTs,
             inputTs - setupTs,
@@ -52,6 +50,8 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
             finalTs - startTs,
         },
     );
+
+    try stdout.print("P1: {}\nP2: {}\n", .{ p1, p2 });
 }
 
 pub fn indexOfFirst(comptime T: type, haystack: []const T, start_index: usize, values: []const []const T) ?struct { pos: usize, idx: usize } {
