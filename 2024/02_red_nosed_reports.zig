@@ -78,5 +78,5 @@ fn Reports(comptime T: type, comptime MAX_LEN: usize) type {
 }
 
 pub fn main() !void {
-    try util.execSolution(Reports(u32, 16));
+    try util.execSolution(Reports(u32, 16), 128);
 }

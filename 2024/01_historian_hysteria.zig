@@ -58,5 +58,5 @@ fn Solution(comptime T: type) type {
 }
 
 pub fn main() !void {
-    try util.execSolution(Solution(u32));
+    try util.execSolution(Solution(u32), 128);
 }

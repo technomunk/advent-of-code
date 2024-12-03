@@ -10,7 +10,7 @@ pub fn readLine(reader: anytype, buffer: []u8) !?[]const u8 {
     }
 }
 
-pub fn execSolution(comptime Solution: type) !void {
+pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     defer {
@@ -23,7 +23,7 @@ pub fn execSolution(comptime Solution: type) !void {
     const stdin = std.io.getStdIn().reader();
     const stdout = std.io.getStdOut().writer();
 
-    var buffer: [128]u8 = undefined;
+    var buffer: [buffer_len]u8 = undefined;
     while (try readLine(stdin, &buffer)) |line| {
         try solution.processLine(line);
     }
@@ -33,4 +33,21 @@ pub fn execSolution(comptime Solution: type) !void {
     }
 
     try stdout.print("P1: {}\nP2: {}\n", .{ solution.solveP1(), solution.solveP2() });
+}
+
+pub fn indexOfFirst(comptime T: type, haystack: []const T, start_index: usize, values: []const []const T) ?struct { pos: usize, idx: usize } {
+    var min_pos: ?usize = null;
+    var needle_idx: ?usize = null;
+    for (values, 0..) |val, needle_i| {
+        if (std.mem.indexOfPos(T, haystack[0 .. min_pos orelse haystack.len], start_index, val)) |pos| {
+            if (min_pos == null or min_pos.? > pos) {
+                min_pos = pos;
+                needle_idx = needle_i;
+            }
+        }
+    }
+    if (min_pos != null and needle_idx != null) {
+        return .{ .pos = min_pos.?, .idx = needle_idx.? };
+    }
+    return null;
 }
