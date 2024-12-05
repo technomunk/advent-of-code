@@ -70,3 +70,12 @@ pub fn indexOfFirst(comptime T: type, haystack: []const T, start_index: usize, v
     }
     return null;
 }
+
+pub fn contains(comptime T: type, haystack: []const T, needle: T) bool {
+    for (haystack) |val| {
+        if (val == needle) {
+            return true;
+        }
+    }
+    return false;
+}
