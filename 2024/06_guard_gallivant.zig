@@ -89,7 +89,9 @@ const Solution = struct {
 
         var newObstacles: usize = 0;
         while (gx >= 0 and gx < self.grid.width and gy >= 0 and gy < self.grid.height) {
-            self.grid.set(@intCast(gx), @intCast(gy), cell(dx, dy));
+            if (self.grid.get(@intCast(gx), @intCast(gy)) != Cell.newObstacle) {
+                self.grid.set(@intCast(gx), @intCast(gy), cell(dx, dy));
+            }
             const nx = gx + dx;
             const ny = gy + dy;
             if (nx < 0 or nx >= self.grid.width or ny < 0 or ny >= self.grid.height) {
@@ -117,7 +119,7 @@ const Solution = struct {
     }
 
     fn obstacleCreatesLoop(self: *Self, x: isize, y: isize, odx: isize, ody: isize) bool {
-        if (x == self.guard_x and y == self.guard_y) {
+        if (self.grid.get(@intCast(x), @intCast(y)) != Cell.empty) {
             return false;
         }
 
@@ -130,8 +132,13 @@ const Solution = struct {
         var gx = x - odx;
         var gy = y - ody;
 
+        var steps: usize = 0;
         while (gx >= 0 and gx < grid.width and gy >= 0 and gy < grid.height) {
             grid.set(@intCast(gx), @intCast(gy), cell(dx, dy));
+            steps += 1;
+            if (steps == 10_000) {
+                return true;
+            }
 
             const nx = gx + dx;
             const ny = gy + dy;
