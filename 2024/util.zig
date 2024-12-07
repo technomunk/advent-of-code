@@ -145,3 +145,14 @@ pub fn DenseGrid(comptime T: type) type {
         }
     };
 }
+
+// Concatenate 2 integers using provided base
+pub fn numconcat(comptime T: type, lhs: T, rhs: T, base: u8) T {
+    var shifted_lhs = lhs;
+    var shifted_rhs = rhs;
+    while (shifted_rhs > 0) {
+        shifted_rhs /= base;
+        shifted_lhs *= base;
+    }
+    return shifted_lhs + rhs;
+}
