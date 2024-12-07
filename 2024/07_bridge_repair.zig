@@ -45,37 +45,37 @@ fn Solution(comptime T: type, comptime rhs_len: usize) type {
             return self.p2;
         }
 
-        fn canSolve(lhs: T, rhs: []const T, ops: []const *const fn (T, T) T) bool {
-            const eq = Equation{ .total = lhs, .ops = ops };
-            return eq.canSolve(rhs[0], rhs[1..]);
-        }
+        fn canSolve(lhs: T, rhs: []const T, comptime ops: []const *const fn (T, T) T) bool {
+            // Reduce stack pressure of recursive calls by combining total and ops into 1 pointer
+            const Equation = struct {
+                total: T,
+                comptime ops: []const *const fn (T, T) T = ops,
 
-        // Reduce stack pressure of recursive calls by combining total and ops into 1 pointer
-        const Equation = struct {
-            total: T,
-            ops: []const *const fn (T, T) T,
+                fn canSolve(self: *const @This(), acc: T, rem: []const T) bool {
+                    if (rem.len == 1) {
+                        inline for (self.ops) |op| {
+                            if (op(acc, rem[0]) == self.total) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+                    if (acc > self.total) {
+                        return false;
+                    }
 
-            fn canSolve(self: *const @This(), acc: T, rhs: []const T) bool {
-                if (rhs.len == 1) {
-                    for (self.ops) |op| {
-                        if (op(acc, rhs[0]) == self.total) {
+                    inline for (self.ops) |op| {
+                        if (self.canSolve(op(acc, rem[0]), rem[1..])) {
                             return true;
                         }
                     }
                     return false;
                 }
-                if (acc > self.total) {
-                    return false;
-                }
+            };
 
-                for (self.ops) |op| {
-                    if (self.canSolve(op(acc, rhs[0]), rhs[1..])) {
-                        return true;
-                    }
-                }
-                return false;
-            }
-        };
+            const eq = Equation{ .total = lhs };
+            return eq.canSolve(rhs[0], rhs[1..]);
+        }
 
         fn mul(lhs: T, rhs: T) T {
             return lhs * rhs;
