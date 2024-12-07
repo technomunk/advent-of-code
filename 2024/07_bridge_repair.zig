@@ -5,6 +5,9 @@ fn Solution(comptime T: type, comptime rhs_len: usize) type {
     return struct {
         const Self = @This();
 
+        const P1_OPS: [2]*const fn (T, T) T = .{ &mul, &add };
+        const P2_OPS = .{ &mul, &add, &concat };
+
         p1: T,
         p2: T,
 
@@ -27,10 +30,10 @@ fn Solution(comptime T: type, comptime rhs_len: usize) type {
                 operands += 1;
             }
 
-            if (canSolveP1(lhs, rhs[0..operands])) {
+            if (canSolve(lhs, rhs[0..operands], &P1_OPS)) {
                 self.p1 += lhs;
             }
-            if (canSolveP2(lhs, rhs[0..operands])) {
+            if (canSolve(lhs, rhs[0..operands], &P2_OPS)) {
                 self.p2 += lhs;
             }
         }
@@ -42,33 +45,46 @@ fn Solution(comptime T: type, comptime rhs_len: usize) type {
             return self.p2;
         }
 
-        fn canSolveP1(lhs: T, rhs: []const T) bool {
-            return canSolveP1Recursive(lhs, 0, rhs);
+        fn canSolve(lhs: T, rhs: []const T, ops: []const *const fn (T, T) T) bool {
+            const eq = Equation{ .total = lhs, .ops = ops };
+            return eq.canSolve(rhs[0], rhs[1..]);
         }
 
-        fn canSolveP1Recursive(total: T, acc: T, remaining: []const T) bool {
-            if (remaining.len == 1) {
-                return acc + remaining[0] == total or acc * remaining[0] == total;
-            }
-            if (acc > total) {
+        // Reduce stack pressure of recursive calls by combining total and ops into 1 pointer
+        const Equation = struct {
+            total: T,
+            ops: []const *const fn (T, T) T,
+
+            fn canSolve(self: *const @This(), acc: T, rhs: []const T) bool {
+                if (rhs.len == 1) {
+                    for (self.ops) |op| {
+                        if (op(acc, rhs[0]) == self.total) {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                if (acc > self.total) {
+                    return false;
+                }
+
+                for (self.ops) |op| {
+                    if (self.canSolve(op(acc, rhs[0]), rhs[1..])) {
+                        return true;
+                    }
+                }
                 return false;
             }
+        };
 
-            return canSolveP1Recursive(total, acc + remaining[0], remaining[1..]) or canSolveP1Recursive(total, acc * remaining[0], remaining[1..]);
+        fn mul(lhs: T, rhs: T) T {
+            return lhs * rhs;
         }
-
-        fn canSolveP2(lhs: T, rhs: []const T) bool {
-            return canSolveP2Recursive(lhs, 0, rhs);
+        fn add(lhs: T, rhs: T) T {
+            return lhs + rhs;
         }
-        fn canSolveP2Recursive(total: T, acc: T, remaining: []const T) bool {
-            if (remaining.len == 1) {
-                return acc + remaining[0] == total or acc * remaining[0] == total or util.numconcat(T, acc, remaining[0], 10) == total;
-            }
-            if (acc > total) {
-                return false;
-            }
-
-            return canSolveP2Recursive(total, acc + remaining[0], remaining[1..]) or canSolveP2Recursive(total, acc * remaining[0], remaining[1..]) or canSolveP2Recursive(total, util.numconcat(T, acc, remaining[0], 10), remaining[1..]);
+        fn concat(lhs: T, rhs: T) T {
+            return util.numconcat(T, lhs, rhs, 10);
         }
     };
 }
