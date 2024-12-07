@@ -53,7 +53,7 @@ fn Solution(comptime T: type, comptime rhs_len: usize) type {
 
                 fn canSolve(self: *const @This(), acc: T, rem: []const T) bool {
                     if (rem.len == 1) {
-                        inline for (self.ops) |op| {
+                        for (self.ops) |op| {
                             if (op(acc, rem[0]) == self.total) {
                                 return true;
                             }
@@ -64,7 +64,7 @@ fn Solution(comptime T: type, comptime rhs_len: usize) type {
                         return false;
                     }
 
-                    inline for (self.ops) |op| {
+                    for (self.ops) |op| {
                         if (self.canSolve(op(acc, rem[0]), rem[1..])) {
                             return true;
                         }
