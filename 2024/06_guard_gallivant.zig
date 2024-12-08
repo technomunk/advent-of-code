@@ -1,5 +1,6 @@
 const std = @import("std");
 const util = @import("util.zig");
+const geom = @import("geom.zig");
 
 const Solution = struct {
     const Self = @This();
@@ -14,13 +15,13 @@ const Solution = struct {
     };
     const VISITED: [4]Cell = .{ Cell.up, Cell.right, Cell.down, Cell.left };
 
-    grid: util.DenseGrid(Cell),
+    grid: geom.DenseGrid(Cell),
     guard_x: isize,
     guard_y: isize,
 
     pub fn init(allocator: std.mem.Allocator) Self {
         return Self{
-            .grid = util.DenseGrid(Cell).init(allocator),
+            .grid = geom.DenseGrid(Cell).init(allocator),
             .guard_x = 0,
             .guard_y = 0,
         };
@@ -161,7 +162,7 @@ const Solution = struct {
         return false;
     }
 
-    fn printGrid(grid: *util.DenseGrid(Cell)) void {
+    fn printGrid(grid: *geom.DenseGrid(Cell)) void {
         for (0..grid.height) |y| {
             for (grid.getRow(y)) |c| {
                 std.debug.print("{c}", .{@intFromEnum(c)});

@@ -50,7 +50,7 @@ fn Solution(comptime T: type) type {
         }
 
         fn ingestOrder(self: *Self, line: []const u8) !void {
-            var parts = std.mem.split(u8, line, "|");
+            var parts = std.mem.splitScalar(u8, line, '|');
             const before = try std.fmt.parseInt(T, parts.next().?, 10);
             const after = try std.fmt.parseInt(T, parts.next().?, 10);
             var entry = try self.order.getOrPut(before);
@@ -62,7 +62,7 @@ fn Solution(comptime T: type) type {
 
         fn ingestManual(self: *Self, line: []const u8) !void {
             self.seen.clearRetainingCapacity();
-            var pages = std.mem.split(u8, line, ",");
+            var pages = std.mem.splitScalar(u8, line, ',');
             var allCorrect = true;
             while (pages.next()) |page| {
                 const pageIdx = try std.fmt.parseInt(T, page, 10);
