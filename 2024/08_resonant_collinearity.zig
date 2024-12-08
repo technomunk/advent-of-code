@@ -11,13 +11,13 @@ fn Solution(comptime T: type) type {
         antennae: std.AutoHashMap(u8, std.ArrayList(Pt2)),
         size: Pt2,
 
-        antinodes: std.ArrayList(Pt2),
+        antinodes: util.Set(Pt2),
 
         pub fn init(allocator: std.mem.Allocator) Self {
             return Self{
                 .antennae = std.AutoHashMap(u8, std.ArrayList(Pt2)).init(allocator),
                 .size = Pt2{ .x = 0, .y = 0 },
-                .antinodes = std.ArrayList(Pt2).init(allocator),
+                .antinodes = util.Set(Pt2).init(allocator),
             };
         }
         pub fn deinit(self: *Self) void {
@@ -48,14 +48,14 @@ fn Solution(comptime T: type) type {
             while (it.next()) |entry| {
                 self.generateStrictAntinodes(entry.value_ptr.items) catch @panic("OOM");
             }
-            return self.antinodes.items.len;
+            return self.antinodes.count();
         }
         pub fn solveP2(self: *Self) usize {
             var it = self.antennae.iterator();
             while (it.next()) |entry| {
                 self.generateHarmonicAntinodes(entry.value_ptr.items) catch @panic("OOM");
             }
-            return self.antinodes.items.len;
+            return self.antinodes.count();
         }
 
         fn addAntenna(self: *Self, freq: u8, pos: Pt2) !void {
@@ -73,13 +73,13 @@ fn Solution(comptime T: type) type {
                 var diff = pair[0].sub(pair[1].*);
                 node = pair[0].add(diff);
                 if (node.isInside(Pt2.ZERO, self.size)) {
-                    try self.addAntinode(node);
+                    try self.antinodes.add(node);
                 }
 
                 diff = pair[1].sub(pair[0].*);
                 node = pair[1].add(diff);
                 if (node.isInside(Pt2.ZERO, self.size)) {
-                    try self.addAntinode(node);
+                    try self.antinodes.add(node);
                 }
             }
         }
@@ -91,25 +91,19 @@ fn Solution(comptime T: type) type {
                 var diff = pair[0].sub(pair[1].*);
                 node = pair[0].add(diff);
                 while (node.isInside(Pt2.ZERO, self.size)) {
-                    try self.addAntinode(node);
+                    try self.antinodes.add(node);
                     node.addi(diff);
                 }
 
                 diff = pair[1].sub(pair[0].*);
                 node = pair[1].add(diff);
                 while (node.isInside(Pt2.ZERO, self.size)) {
-                    try self.addAntinode(node);
+                    try self.antinodes.add(node);
                     node.addi(diff);
                 }
             }
             for (antennae) |a| {
-                try self.addAntinode(a);
-            }
-        }
-
-        fn addAntinode(self: *Self, pos: Pt2) !void {
-            if (!util.contains(Pt2, self.antinodes.items, pos)) {
-                try self.antinodes.append(pos);
+                try self.antinodes.add(a);
             }
         }
     };

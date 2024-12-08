@@ -71,6 +71,32 @@ pub fn indexOfFirst(comptime T: type, haystack: []const T, start_index: usize, v
     return null;
 }
 
+pub fn Set(comptime T: type) type {
+    return struct {
+        const Self = @This();
+        backing: std.AutoHashMap(T, void),
+
+        pub fn init(allocator: std.mem.Allocator) Self {
+            return Self{
+                .backing = std.AutoHashMap(T, void).init(allocator),
+            };
+        }
+        pub fn deinit(self: *Self) void {
+            self.backing.deinit();
+        }
+
+        pub fn add(self: *Self, value: T) !void {
+            try self.backing.put(value, void{});
+        }
+        pub fn has(self: *Self, value: T) bool {
+            return self.backing.get(value) != null;
+        }
+        pub fn count(self: *Self) u32 {
+            return self.backing.count();
+        }
+    };
+}
+
 pub fn contains(comptime T: type, haystack: []const T, needle: T) bool {
     for (haystack) |straw| {
         if (std.meta.eql(straw, needle)) {
