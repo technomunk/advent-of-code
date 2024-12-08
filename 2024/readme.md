@@ -4,7 +4,7 @@ Done using [Zig](https://ziglang.org/) starting with 0 experience in the languag
 
 ## Installation
 
-Follow official [Zig](https://ziglang.org/download/) instructions.
+Follow official [Zig](https://ziglang.org/download/) instructions and install zig v0.14.*.
 
 ## Running
 
