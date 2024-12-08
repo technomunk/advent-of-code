@@ -72,78 +72,12 @@ pub fn indexOfFirst(comptime T: type, haystack: []const T, start_index: usize, v
 }
 
 pub fn contains(comptime T: type, haystack: []const T, needle: T) bool {
-    return std.mem.indexOfScalar(T, haystack, needle) != null;
-}
-
-pub fn DenseGrid(comptime T: type) type {
-    return struct {
-        const Self = @This();
-
-        values: std.ArrayList(T),
-        width: usize,
-        height: usize,
-
-        pub fn init(allocator: std.mem.Allocator) Self {
-            return Self{
-                .values = std.ArrayList(T).init(allocator),
-                .width = 1,
-                .height = 0,
-            };
+    for (haystack) |straw| {
+        if (std.meta.eql(straw, needle)) {
+            return true;
         }
-        pub fn deinit(self: *Self) void {
-            self.values.deinit();
-        }
-
-        pub fn clone(self: *Self) !Self {
-            var values = std.ArrayList(T).init(self.values.allocator);
-            try values.appendSlice(self.values.items);
-            return Self{
-                .values = values,
-                .width = self.width,
-                .height = self.height,
-            };
-        }
-
-        pub fn append(self: *Self, item: T) !void {
-            try self.values.append(item);
-        }
-        pub fn appendRow(self: *Self, row: []const T) !void {
-            try self.values.appendSlice(row);
-            self.height += 1;
-        }
-
-        pub fn get(self: *Self, x: usize, y: usize) T {
-            return self.values.items[x + y * self.width];
-        }
-        pub fn set(self: *Self, x: usize, y: usize, value: T) void {
-            self.values.items[x + y * self.width] = value;
-        }
-
-        pub fn getRow(self: *Self, y: usize) []T {
-            const start = y * self.width;
-            const end = start + self.width;
-            return self.values.items[start..end];
-        }
-
-        pub fn count(self: *Self, value: T) usize {
-            var result: usize = 0;
-            for (self.values.items) |item| {
-                if (item == value) {
-                    result += 1;
-                }
-            }
-            return result;
-        }
-        pub fn countAnyOf(self: *Self, values: []const T) usize {
-            var result: usize = 0;
-            for (self.values.items) |item| {
-                if (contains(T, values, item)) {
-                    result += 1;
-                }
-            }
-            return result;
-        }
-    };
+    }
+    return false;
 }
 
 // Concatenate 2 integers using provided base
