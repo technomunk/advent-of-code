@@ -12,6 +12,7 @@ pub fn readLine(reader: anytype, buffer: []u8) !?[]const u8 {
 
 pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     const startTs = std.time.milliTimestamp();
+
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
     defer {
@@ -30,7 +31,7 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
         try solution.processLine(line);
     }
 
-    if (@hasDecl(Solution, "finalizeInput")) {
+    if (std.meta.hasMethod(Solution, "finalizeInput")) {
         solution.finalizeInput();
     }
 
@@ -104,6 +105,12 @@ pub fn contains(comptime T: type, haystack: []const T, needle: T) bool {
         }
     }
     return false;
+}
+
+pub fn clone(comptime T: type, allocator: std.mem.Allocator, slice: []const T) ![]T {
+    const result = try allocator.alloc(T, slice.len);
+    std.mem.copyForwards(T, result, slice);
+    return result;
 }
 
 // Concatenate 2 integers using provided base
