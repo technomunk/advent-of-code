@@ -71,6 +71,11 @@ pub fn Point2(comptime T: type) type {
     };
 }
 
+pub const Index2 = struct {
+    x: usize,
+    y: usize,
+};
+
 pub fn DenseGrid(comptime T: type) type {
     return struct {
         const Self = @This();
@@ -90,7 +95,7 @@ pub fn DenseGrid(comptime T: type) type {
             self.values.deinit();
         }
 
-        pub fn clone(self: *Self) !Self {
+        pub fn clone(self: *const Self) !Self {
             var values = std.ArrayList(T).init(self.values.allocator);
             try values.appendSlice(self.values.items);
             return Self{
@@ -108,11 +113,11 @@ pub fn DenseGrid(comptime T: type) type {
             self.height += 1;
         }
 
-        pub fn get(self: *Self, x: usize, y: usize) T {
-            return self.values.items[x + y * self.width];
+        pub fn get(self: *Self, index: Index2) T {
+            return self.values.items[index.x + index.y * self.width];
         }
-        pub fn set(self: *Self, x: usize, y: usize, value: T) void {
-            self.values.items[x + y * self.width] = value;
+        pub fn set(self: *Self, index: Index2, value: T) void {
+            self.values.items[index.x + index.y * self.width] = value;
         }
 
         pub fn getRow(self: *Self, y: usize) []T {
@@ -121,7 +126,7 @@ pub fn DenseGrid(comptime T: type) type {
             return self.values.items[start..end];
         }
 
-        pub fn count(self: *Self, value: T) usize {
+        pub fn count(self: *const Self, value: T) usize {
             var result: usize = 0;
             for (self.values.items) |item| {
                 if (item == value) {
@@ -130,7 +135,7 @@ pub fn DenseGrid(comptime T: type) type {
             }
             return result;
         }
-        pub fn countAnyOf(self: *Self, values: []const T) usize {
+        pub fn countAnyOf(self: *const Self, values: []const T) usize {
             var result: usize = 0;
             for (self.values.items) |item| {
                 if (util.contains(T, values, item)) {
@@ -138,6 +143,36 @@ pub fn DenseGrid(comptime T: type) type {
                 }
             }
             return result;
+        }
+
+        pub fn coordOf(self: *const Self, value: T) ?Index2 {
+            const needle: [1]T = .{value};
+            if (std.mem.indexOf(T, self.values.items, needle)) |idx| {
+                return .{ .x = idx % self.width, .y = idx / self.width };
+            }
+            return null;
+        }
+
+        var coords: [4]Index2 = undefined;
+        pub fn cardinalNeighbors(self: *const Self, index: Index2) []Index2 {
+            var len: usize = 0;
+            if (index.x > 0) {
+                coords[len] = .{ .x = index.x - 1, .y = index.y };
+                len += 1;
+            }
+            if (index.x + 1 < self.width) {
+                coords[len] = .{ .x = index.x + 1, .y = index.y };
+                len += 1;
+            }
+            if (index.y > 0) {
+                coords[len] = .{ .x = index.x, .y = index.y - 1 };
+                len += 1;
+            }
+            if (index.y + 1 < self.height) {
+                coords[len] = .{ .x = index.x, .y = index.y + 1 };
+                len += 1;
+            }
+            return coords[0..len];
         }
     };
 }
