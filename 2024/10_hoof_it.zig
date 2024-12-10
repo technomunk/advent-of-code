@@ -39,16 +39,25 @@ const Solution = struct {
 
             const x = i % self.map.width;
             const y = i / self.map.width;
-            answer += self.trailheadScore(x, y);
+            answer += self.measureScore(x, y);
         }
         return answer;
     }
     pub fn solveP2(self: *Self) usize {
-        _ = self;
-        return 0;
+        var answer: usize = 0;
+        for (self.map.values.items, 0..) |h, i| {
+            if (h != 0) {
+                continue;
+            }
+
+            const x = i % self.map.width;
+            const y = i / self.map.width;
+            answer += self.measureRating(x, y);
+        }
+        return answer;
     }
 
-    fn trailheadScore(self: *Self, x: usize, y: usize) usize {
+    fn measureScore(self: *Self, x: usize, y: usize) usize {
         // dfs
         var result: usize = 0;
 
@@ -68,6 +77,65 @@ const Solution = struct {
                 result += 1;
                 continue;
             }
+
+            for (self.map.cardinalNeighbors(coord)) |n| {
+                if (self.map.get(n) == h) {
+                    self.stack.append(n) catch @panic("OOM");
+                }
+            }
+        }
+
+        return result;
+    }
+    fn measureRating(self: *Self, x: usize, y: usize) usize {
+        // dfs
+        var result: usize = 0;
+
+        // note that the stack should be empty even after it has been used
+        self.stack.append(.{ .x = x, .y = y }) catch @panic("OOM");
+
+        while (self.stack.popOrNull()) |coord| {
+            const h = self.map.get(coord) + 1;
+            if (h == 10) {
+                result += 1;
+                continue;
+            }
+
+            for (self.map.cardinalNeighbors(coord)) |n| {
+                if (self.map.get(n) == h) {
+                    self.stack.append(n) catch @panic("OOM");
+                }
+            }
+        }
+
+        return result;
+    }
+
+    fn measureTrailhead(self: *Self, x: usize, y: usize, comptime isScore: bool) usize {
+        // dfs
+        var result: usize = 0;
+
+        // note that the stack should be empty even after it has been used
+        self.stack.append(.{ .x = x, .y = y }) catch @panic("OOM");
+        var seen = util.Set(geom.Index2).init(self.stack.allocator);
+        defer seen.deinit();
+
+        while (self.stack.popOrNull()) |coord| {
+            if (seen.has(coord)) {
+                continue;
+            }
+
+            const h = self.map.get(coord) + 1;
+            if (h == 10) {
+                result += 1;
+                if (isScore) {
+                    seen.add(coord) catch @panic("OOM");
+                }
+                continue;
+            } else {
+                seen.add(coord) catch @panic("OOM");
+            }
+
             for (self.map.cardinalNeighbors(coord)) |n| {
                 if (self.map.get(n) == h) {
                     self.stack.append(n) catch @panic("OOM");
