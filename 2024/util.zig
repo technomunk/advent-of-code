@@ -11,7 +11,7 @@ pub fn readLine(reader: anytype, buffer: []u8) !?[]const u8 {
 }
 
 pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
-    const startTs = std.time.milliTimestamp();
+    var timer = try std.time.Timer.start();
 
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     const allocator = gpa.allocator();
@@ -26,7 +26,9 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     const stdout = std.io.getStdOut().writer();
 
     var buffer: [buffer_len]u8 = undefined;
-    const setupTs = std.time.milliTimestamp();
+
+    const setupT = timer.read();
+
     while (try readLine(stdin, &buffer)) |line| {
         try solution.processLine(line);
     }
@@ -34,25 +36,41 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     if (std.meta.hasMethod(Solution, "finalizeInput")) {
         solution.finalizeInput();
     }
+    const inputT = timer.read();
 
-    const inputTs = std.time.milliTimestamp();
     const p1 = solution.solveP1();
-    const p1Ts = std.time.milliTimestamp();
+    const p1T = timer.read();
+
     const p2 = solution.solveP2();
+    const finalT = timer.read();
+    try printTime(stdout, "Setup", setupT);
+    try printTime(stdout, "Input", inputT - setupT);
+    try printTime(stdout, "Part 1", p1T - setupT);
+    try printTime(stdout, "Part 2", finalT - p1T);
+    try printTime(stdout, "Total", finalT);
 
-    const finalTs = std.time.milliTimestamp();
-    try stdout.print(
-        "Setup  : {}ms\nInput  : {}ms\nP1 time: {}ms\nP2 time: {}ms\nTotal  : {}ms\n\n",
-        .{
-            setupTs - startTs,
-            inputTs - setupTs,
-            p1Ts - inputTs,
-            finalTs - p1Ts,
-            finalTs - startTs,
-        },
-    );
+    try stdout.print("\nP1: {}\nP2: {}\n", .{ p1, p2 });
+}
 
-    try stdout.print("P1: {}\nP2: {}\n", .{ p1, p2 });
+fn printTime(out: anytype, label: []const u8, nanos: u64) !void {
+    const unit, const time = readableTime(nanos);
+    try out.print("{s:<6}: {d:.2} {s}\n", .{ label, time, unit });
+}
+fn readableTime(nanos: u64) struct { []const u8, f64 } {
+    var time: f64 = @floatFromInt(nanos);
+    if (time > 1e4) {
+        time /= 1e6;
+        if (time > 1e3) {
+            time /= 1e3;
+            if (time > 100) {
+                time /= 60;
+                return .{ "m", time };
+            }
+            return .{ "s", time };
+        }
+        return .{ "ms", time };
+    }
+    return .{ "ns", time };
 }
 
 pub fn indexOfFirst(comptime T: type, haystack: []const T, start_index: usize, values: []const []const T) ?struct { pos: usize, idx: usize } {
@@ -94,6 +112,10 @@ pub fn Set(comptime T: type) type {
         }
         pub fn count(self: *Self) u32 {
             return self.backing.count();
+        }
+
+        pub fn clearRetainingCapacity(self: *Self) void {
+            self.backing.clearRetainingCapacity();
         }
     };
 }
