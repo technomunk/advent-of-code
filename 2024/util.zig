@@ -45,7 +45,7 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     const finalT = timer.read();
     try printTime(stdout, "Setup", setupT);
     try printTime(stdout, "Input", inputT - setupT);
-    try printTime(stdout, "Part 1", p1T - setupT);
+    try printTime(stdout, "Part 1", p1T - inputT);
     try printTime(stdout, "Part 2", finalT - p1T);
     try printTime(stdout, "Total", finalT);
 
