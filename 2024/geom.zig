@@ -113,11 +113,34 @@ pub fn DenseGrid(comptime T: type) type {
             self.height += 1;
         }
 
-        pub fn get(self: *Self, index: Index2) T {
-            return self.values.items[index.x + index.y * self.width];
+        pub fn get(self: *Self, index: Index2) *T {
+            return &self.values.items[index.x + index.y * self.width];
         }
         pub fn set(self: *Self, index: Index2, value: T) void {
             self.values.items[index.x + index.y * self.width] = value;
+        }
+
+        const Index2Iterator = struct {
+            i: usize,
+            width: usize,
+            height: usize,
+
+            pub fn next(self: *Index2Iterator) ?Index2 {
+                const y = self.i / self.width;
+                if (y >= self.height) {
+                    return null;
+                }
+                const x = self.i % self.width;
+                self.i += 1;
+                return .{ .x = x, .y = y };
+            }
+        };
+        pub fn coordinateIterator(self: *const Self) Index2Iterator {
+            return Index2Iterator{
+                .i = 0,
+                .height = self.height,
+                .width = self.width,
+            };
         }
 
         pub fn getRow(self: *Self, y: usize) []T {
