@@ -74,6 +74,13 @@ pub fn Point2(comptime T: type) type {
 pub const Index2 = struct {
     x: usize,
     y: usize,
+
+    pub fn corner(center: Index2, a: Index2, b: Index2) Index2 {
+        return .{
+            .x = center.x +% a.x -% center.x +% b.x -% center.x,
+            .y = center.y +% a.y -% center.y +% b.y -% center.y,
+        };
+    }
 };
 
 pub fn DenseGrid(comptime T: type) type {
@@ -111,6 +118,10 @@ pub fn DenseGrid(comptime T: type) type {
         pub fn appendRow(self: *Self, row: []const T) !void {
             try self.values.appendSlice(row);
             self.height += 1;
+        }
+
+        pub fn includes(self: *Self, index: Index2) bool {
+            return index.x < self.width and index.y < self.height;
         }
 
         pub fn get(self: *Self, index: Index2) *T {

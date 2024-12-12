@@ -34,7 +34,7 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     }
 
     if (std.meta.hasMethod(Solution, "finalizeInput")) {
-        solution.finalizeInput();
+        try solution.finalizeInput();
     }
     const inputT = timer.read();
 
