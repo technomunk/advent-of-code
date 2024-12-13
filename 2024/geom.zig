@@ -55,6 +55,13 @@ pub fn Point2(comptime T: type) type {
         pub fn mult(self: Self, m: T) Self {
             return Self{ .x = self.x * m, .y = self.y * m };
         }
+        pub fn mod(self: Self, o: Self) Self {
+            return Self{ .x = self.x % o.x, .y = self.y % o.y };
+        }
+
+        pub fn eq(self: Self, o: Self) bool {
+            return self.x == o.x and self.y == o.y;
+        }
 
         pub fn dir(dir_: Dir2) Self {
             return switch (dir_) {
@@ -67,6 +74,10 @@ pub fn Point2(comptime T: type) type {
 
         pub fn isInside(self: *Self, min: Self, max: Self) bool {
             return self.x >= min.x and self.y >= min.y and self.x < max.x and self.y < max.y;
+        }
+
+        pub fn format(self: Self, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+            try writer.print("({[x]}, {[y]})", self);
         }
     };
 }
