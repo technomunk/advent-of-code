@@ -32,10 +32,10 @@ pub fn Solution(comptime T: type) type {
         const Self = @This();
 
         robots: std.ArrayList(Robot),
-        grid: geom.DenseGrid(u8),
+        grid: geom.DenseGrid(u1),
 
         pub fn init(allocator: std.mem.Allocator) Self {
-            var grid = geom.DenseGrid(u8).init(allocator);
+            var grid = geom.DenseGrid(u1).init(allocator);
             grid.width = 101;
             grid.height = 103;
             const new = grid.values.addManyAsSlice(101 * 103) catch @panic("OOM");
@@ -77,8 +77,10 @@ pub fn Solution(comptime T: type) type {
                     r.pos = step(r.*, 1);
                 }
                 steps += 1;
-                std.debug.print("After {} steps:\n", .{steps});
-                self.printBots();
+                if (self.isChristmassTree()) {
+                    self.printBots();
+                    return steps;
+                }
             }
         }
 
@@ -95,19 +97,30 @@ pub fn Solution(comptime T: type) type {
             return r.pos.add(r.vel.mult(n)).mod(.{ .x = 101, .y = 103 });
         }
 
+        fn isChristmassTree(self: *Self) bool {
+            for (self.grid.values.items) |*c| {
+                c.* = 0;
+            }
+            for (self.robots.items) |r| {
+                self.grid.set(r.pos.asIndex2(), 1);
+            }
+            const needle = [_]u1{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 };
+            return std.mem.indexOf(u1, self.grid.values.items, &needle) != null;
+        }
+
         fn printBots(self: *Self) void {
             for (self.grid.values.items) |*c| {
                 c.* = 0;
             }
 
             for (self.robots.items) |r| {
-                self.grid.set(r.pos.asIndex2(), self.grid.get(r.pos.asIndex2()).* + 1);
+                self.grid.set(r.pos.asIndex2(), 1);
             }
 
             for (0..self.grid.height) |y| {
                 for (self.grid.getRow(y)) |c| {
-                    const char: u8 = if (c == 0) '.' else if (c >= 10) 'x' else '0' + c;
-                    std.debug.print("{c}", .{char});
+                    const pc: u8 = if (c == 1) 'x' else '.';
+                    std.debug.print("{c}", .{pc});
                 }
                 std.debug.print("\n", .{});
             }
