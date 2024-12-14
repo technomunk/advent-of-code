@@ -56,7 +56,10 @@ pub fn Point2(comptime T: type) type {
             return Self{ .x = self.x * m, .y = self.y * m };
         }
         pub fn mod(self: Self, o: Self) Self {
-            return Self{ .x = self.x % o.x, .y = self.y % o.y };
+            return Self{ .x = @mod(self.x, o.x), .y = @mod(self.y, o.y) };
+        }
+        pub fn modn(self: Self, n: T) Self {
+            return Self{ .x = @mod(self.x, n), .y = @mod(self.y, n) };
         }
 
         pub fn eq(self: Self, o: Self) bool {
@@ -78,6 +81,10 @@ pub fn Point2(comptime T: type) type {
 
         pub fn format(self: Self, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
             try writer.print("({[x]}, {[y]})", self);
+        }
+
+        pub fn asIndex2(self: Self) Index2 {
+            return Index2{ .x = @intCast(self.x), .y = @intCast(self.y) };
         }
     };
 }
