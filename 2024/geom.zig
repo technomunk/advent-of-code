@@ -23,6 +23,19 @@ pub const Dir2 = enum {
             .Left => .Down,
         }
     }
+
+    pub fn format(self: Dir2, comptime fmt: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+        if (!std.mem.eql(u8, fmt, "c")) {
+            @panic("Unknown format option for direction");
+        }
+        const c: u8 = switch (self) {
+            .Up => '^',
+            .Right => '>',
+            .Down => 'v',
+            .Left => '<',
+        };
+        try writer.print("{c}", .{c});
+    }
 };
 
 pub fn Point2(comptime T: type) type {
@@ -99,6 +112,15 @@ pub const Index2 = struct {
             .y = center.y +% a.y -% center.y +% b.y -% center.y,
         };
     }
+
+    pub fn shift(self: Index2, dir: Dir2) Index2 {
+        return switch (dir) {
+            .Up => Index2{ .x = self.x, .y = self.y - 1 },
+            .Right => Index2{ .x = self.x + 1, .y = self.y },
+            .Down => Index2{ .x = self.x, .y = self.y + 1 },
+            .Left => Index2{ .x = self.x - 1, .y = self.y },
+        };
+    }
 };
 
 pub fn DenseGrid(comptime T: type) type {
@@ -138,12 +160,21 @@ pub fn DenseGrid(comptime T: type) type {
             self.height += 1;
         }
 
+        pub fn addRow(self: *Self) ![]T {
+            const new = try self.values.addManyAsSlice(self.width);
+            self.height += 1;
+            return new;
+        }
+
         pub fn includes(self: *Self, index: Index2) bool {
             return index.x < self.width and index.y < self.height;
         }
 
         pub fn get(self: *Self, index: Index2) *T {
             return &self.values.items[index.x + index.y * self.width];
+        }
+        pub fn getCpy(self: *const Self, index: Index2) T {
+            return self.values.items[index.x + index.y * self.width];
         }
         pub fn set(self: *Self, index: Index2, value: T) void {
             self.values.items[index.x + index.y * self.width] = value;
@@ -199,7 +230,7 @@ pub fn DenseGrid(comptime T: type) type {
 
         pub fn coordOf(self: *const Self, value: T) ?Index2 {
             const needle: [1]T = .{value};
-            if (std.mem.indexOf(T, self.values.items, needle)) |idx| {
+            if (std.mem.indexOf(T, self.values.items, &needle)) |idx| {
                 return .{ .x = idx % self.width, .y = idx / self.width };
             }
             return null;
@@ -225,6 +256,15 @@ pub fn DenseGrid(comptime T: type) type {
                 len += 1;
             }
             return coords[0..len];
+        }
+
+        pub fn format(self: Self, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+            for (0..self.height) |y| {
+                for (0..self.width) |x| {
+                    try writer.print("{c}", .{self.getCpy(.{ .x = x, .y = y })});
+                }
+                try writer.writeAll("\n");
+            }
         }
     };
 }
