@@ -8,35 +8,58 @@ pub const Dir2 = enum {
     Left,
 
     pub fn rotateRight(self: Dir2) Dir2 {
-        switch (self) {
+        return switch (self) {
             .Up => .Right,
             .Right => .Down,
             .Down => .Left,
             .Left => .Up,
-        }
+        };
     }
     pub fn rotateLeft(self: Dir2) Dir2 {
-        switch (self) {
+        return switch (self) {
             .Up => .Left,
             .Right => .Up,
             .Down => .Right,
             .Left => .Down,
-        }
+        };
     }
 
     pub fn format(self: Dir2, comptime fmt: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
-        if (!std.mem.eql(u8, fmt, "c")) {
-            @panic("Unknown format option for direction");
+        if (std.mem.eql(u8, fmt, "c")) {
+            const c: u8 = switch (self) {
+                .Up => '^',
+                .Right => '>',
+                .Down => 'v',
+                .Left => '<',
+            };
+            try writer.print("{c}", .{c});
+            return;
         }
-        const c: u8 = switch (self) {
-            .Up => '^',
-            .Right => '>',
-            .Down => 'v',
-            .Left => '<',
+        const name: []const u8 = switch (self) {
+            .Up => "Up",
+            .Right => "Right",
+            .Down => "Down",
+            .Left => "Left",
         };
-        try writer.print("{c}", .{c});
+        try writer.print("Dir2.{s}\n", .{name});
+    }
+
+    pub fn turnsTo(self: Dir2, to: Dir2) u2 {
+        if (self == to)
+            return 0;
+        if (self.rotateLeft() == to or self.rotateRight() == to)
+            return 1;
+        return 2;
     }
 };
+
+test "Dir2.turnsTo" {
+    const a = Dir2.Left;
+    try std.testing.expectEqual(0, a.turnsTo(Dir2.Left));
+    try std.testing.expectEqual(1, a.turnsTo(Dir2.Up));
+    try std.testing.expectEqual(1, a.turnsTo(Dir2.Down));
+    try std.testing.expectEqual(2, a.turnsTo(Dir2.Right));
+}
 
 pub fn Point2(comptime T: type) type {
     return struct {
@@ -121,7 +144,22 @@ pub const Index2 = struct {
             .Left => Index2{ .x = self.x - 1, .y = self.y },
         };
     }
+
+    pub fn dirTo(self: Index2, to: Index2) Dir2 {
+        if (self.x == to.x) {
+            return if (to.y < self.y) .Up else .Down;
+        }
+        return if (to.x < self.x) .Left else .Right;
+    }
 };
+
+test "Index2.dirTo" {
+    const pos = Index2{ .x = 1, .y = 1 };
+    try std.testing.expectEqual(.Left, pos.dirTo(.{ .x = 0, .y = 1 }));
+    try std.testing.expectEqual(.Right, pos.dirTo(.{ .x = 2, .y = 1 }));
+    try std.testing.expectEqual(.Up, pos.dirTo(.{ .x = 1, .y = 0 }));
+    try std.testing.expectEqual(.Down, pos.dirTo(.{ .x = 1, .y = 2 }));
+}
 
 pub fn DenseGrid(comptime T: type) type {
     return struct {
