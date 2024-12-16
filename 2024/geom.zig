@@ -151,6 +151,10 @@ pub const Index2 = struct {
         }
         return if (to.x < self.x) .Left else .Right;
     }
+
+    pub fn eq(self: Index2, o: Index2) bool {
+        return self.x == o.x and self.y == o.y;
+    }
 };
 
 test "Index2.dirTo" {

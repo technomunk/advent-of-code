@@ -93,11 +93,13 @@ pub fn indexOfFirst(comptime T: type, haystack: []const T, start_index: usize, v
 pub fn Set(comptime T: type) type {
     return struct {
         const Self = @This();
-        backing: std.AutoHashMap(T, void),
+        const BackingT = std.AutoHashMap(T, void);
+        const IteratorT = BackingT.KeyIterator;
+        backing: BackingT,
 
         pub fn init(allocator: std.mem.Allocator) Self {
             return Self{
-                .backing = std.AutoHashMap(T, void).init(allocator),
+                .backing = BackingT.init(allocator),
             };
         }
         pub fn deinit(self: *Self) void {
@@ -116,6 +118,10 @@ pub fn Set(comptime T: type) type {
 
         pub fn clearRetainingCapacity(self: *Self) void {
             self.backing.clearRetainingCapacity();
+        }
+
+        pub fn iterator(self: *Self) IteratorT {
+            return self.backing.keyIterator();
         }
     };
 }
