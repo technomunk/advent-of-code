@@ -2,6 +2,7 @@ const std = @import("std");
 const util = @import("util.zig");
 
 pub const Dir2 = enum {
+    pub const ALL: [4]Dir2 = .{ .Up, .Right, .Down, .Left };
     Up,
     Right,
     Down,
@@ -154,6 +155,10 @@ pub const Index2 = struct {
 
     pub fn eq(self: Index2, o: Index2) bool {
         return self.x == o.x and self.y == o.y;
+    }
+
+    pub fn format(self: Index2, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
+        try writer.print("[{}, {}]", .{ self.x, self.y });
     }
 };
 
