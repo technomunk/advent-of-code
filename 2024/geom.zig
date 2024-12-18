@@ -123,6 +123,10 @@ pub fn Point2(comptime T: type) type {
         pub fn asIndex2(self: Self) Index2 {
             return Index2{ .x = @intCast(self.x), .y = @intCast(self.y) };
         }
+
+        pub fn hamiltonDist(a: Self, b: Self) usize {
+            return @max(a.x, b.x) - @min(a.x, b.x) + @max(a.y, b.y) - @min(a.y, b.y);
+        }
     };
 }
 
@@ -159,6 +163,10 @@ pub const Index2 = struct {
 
     pub fn format(self: Index2, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
         try writer.print("[{}, {}]", .{ self.x, self.y });
+    }
+
+    pub fn hamiltonDist(a: Index2, b: Index2) usize {
+        return @max(a.x, b.x) - @min(a.x, b.x) + @max(a.y, b.y) - @min(a.y, b.y);
     }
 };
 
@@ -211,6 +219,13 @@ pub fn DenseGrid(comptime T: type) type {
             const new = try self.values.addManyAsSlice(self.width);
             self.height += 1;
             return new;
+        }
+
+        pub fn fill(self: *Self, val: T) !void {
+            const new = try self.values.addManyAsSlice(self.width * self.height - self.values.items.len);
+            for (new) |*c| {
+                c.* = val;
+            }
         }
 
         pub fn includes(self: *Self, index: Index2) bool {

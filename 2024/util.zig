@@ -38,10 +38,10 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     }
     const inputT = timer.read();
 
-    const p1 = solution.solveP1();
+    const p1 = try solution.solveP1();
     const p1T = timer.read();
 
-    const p2 = solution.solveP2();
+    const p2 = try solution.solveP2();
     const finalT = timer.read();
     try printTime(stdout, "Setup", setupT);
     try printTime(stdout, "Input", inputT - setupT);
@@ -150,4 +150,107 @@ pub fn numconcat(comptime T: type, lhs: T, rhs: T, base: u8) T {
         shifted_lhs *= base;
     }
     return shifted_lhs + rhs;
+}
+
+/// A* pathfinder
+///
+/// The context needs to have the following methods:
+/// - `fn getNeighbors(self: TCtx, node: TNode) []TNode`
+/// - `fn heuristic(self: TCtx, from: TNode, to: TNode) usize`
+/// - `fn calcDist(self: TCtx, from: TNode, to: TNode) usize`
+/// - `fn eq(self: TCtx, a: TNode, b: TNode) bool`
+pub fn PathFinder(comptime TNode: type, comptime TCtx: type) type {
+    const CostMap = std.AutoHashMap(TNode, usize);
+    const PrioCtx = struct {
+        const Self = @This();
+
+        costs: *CostMap,
+        ctx: *TCtx,
+        to: TNode,
+
+        pub fn cmp(self: Self, a: TNode, b: TNode) std.math.Order {
+            return std.math.order(self.costOf(a), self.costOf(b));
+        }
+
+        fn costOf(self: *const Self, node: TNode) usize {
+            if (self.costs.get(node)) |cost| {
+                return std.math.add(usize, cost, self.ctx.heuristic(node, self.to)) catch return std.math.maxInt(usize);
+            }
+            return std.math.maxInt(usize);
+        }
+    };
+    const PrioQueue = std.PriorityQueue(TNode, PrioCtx, PrioCtx.cmp);
+
+    return struct {
+        pub const PathError = error{NoPathExists};
+        const Self = @This();
+
+        prev: std.AutoHashMap(TNode, TNode),
+        dist: CostMap,
+        ctx: TCtx,
+
+        lastFrom: ?TNode = null,
+        lastTo: ?TNode = null,
+
+        pub fn init(allocator: std.mem.Allocator, context: TCtx) Self {
+            return Self{
+                .prev = std.AutoHashMap(TNode, TNode).init(allocator),
+                .dist = CostMap.init(allocator),
+                .ctx = context,
+            };
+        }
+        pub fn deinit(self: *Self) void {
+            self.prev.deinit();
+            self.dist.deinit();
+        }
+
+        pub fn lowestPathScore(self: *Self, from: TNode, to: TNode) !usize {
+            if (self.lastFrom == null or !self.ctx.eq(from, self.lastFrom.?) or !self.ctx.eq(to, self.lastTo.?))
+                try self.pathfind(from, to);
+            return self.dist.get(to).?;
+        }
+
+        pub fn pathfind(self: *Self, from: TNode, to: TNode) !void {
+            var queue = PrioQueue.init(self.prev.allocator, .{
+                .costs = &self.dist,
+                .to = to,
+                .ctx = &self.ctx,
+            });
+            defer queue.deinit();
+
+            self.reset();
+            try queue.add(from);
+            try self.dist.put(from, 0);
+
+            while (queue.removeOrNull()) |current| {
+                if (self.ctx.eq(current, to))
+                    return;
+
+                const currentDist = self.dist.get(current).?;
+                for (self.ctx.getNeighbors(current)) |n| {
+                    const dist = currentDist + self.ctx.calcDist(current, n);
+                    const knownDist = self.dist.get(n) orelse std.math.maxInt(usize);
+                    if (dist < knownDist) {
+                        try self.prev.put(n, current);
+                        try self.dist.put(n, dist);
+                        if (!contains(TNode, queue.items, n))
+                            try queue.add(n);
+                    }
+                }
+            }
+
+            return error.NoPathExists;
+        }
+
+        pub fn reset(self: *Self) void {
+            self.lastFrom = null;
+            self.lastTo = null;
+            self.prev.clearRetainingCapacity();
+            self.dist.clearRetainingCapacity();
+        }
+    };
+}
+
+fn trivialEq(a: anytype, b: anytype) bool {
+    return a == b;
 }
