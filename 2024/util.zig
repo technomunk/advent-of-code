@@ -254,3 +254,13 @@ pub fn PathFinder(comptime TNode: type, comptime TCtx: type) type {
 fn trivialEq(a: anytype, b: anytype) bool {
     return a == b;
 }
+
+pub fn reverse(comptime T: type, slice: []T) void {
+    var left: usize = 0;
+    var right: usize = slice.len - 1;
+    while (left < right) {
+        std.mem.swap(T, &slice[left], &slice[right]);
+        left += 1;
+        right -= 1;
+    }
+}

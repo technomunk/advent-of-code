@@ -298,26 +298,25 @@ pub fn DenseGrid(comptime T: type) type {
             return null;
         }
 
-        var coords: [4]Index2 = undefined;
-        pub fn cardinalNeighbors(self: *const Self, index: Index2) []Index2 {
+        pub fn cardinalNeighbors(self: *const Self, index: Index2, mem: *[4]Index2) []Index2 {
             var len: usize = 0;
             if (index.x > 0) {
-                coords[len] = .{ .x = index.x - 1, .y = index.y };
+                mem[len] = .{ .x = index.x - 1, .y = index.y };
                 len += 1;
             }
             if (index.x + 1 < self.width) {
-                coords[len] = .{ .x = index.x + 1, .y = index.y };
+                mem[len] = .{ .x = index.x + 1, .y = index.y };
                 len += 1;
             }
             if (index.y > 0) {
-                coords[len] = .{ .x = index.x, .y = index.y - 1 };
+                mem[len] = .{ .x = index.x, .y = index.y - 1 };
                 len += 1;
             }
             if (index.y + 1 < self.height) {
-                coords[len] = .{ .x = index.x, .y = index.y + 1 };
+                mem[len] = .{ .x = index.x, .y = index.y + 1 };
                 len += 1;
             }
-            return coords[0..len];
+            return mem[0..len];
         }
 
         pub fn format(self: Self, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
