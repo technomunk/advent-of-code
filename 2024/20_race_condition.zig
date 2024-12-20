@@ -35,46 +35,22 @@ const Solution = struct {
         try self.findCheats(2);
         var count: usize = 0;
         var cheatIter = self.cheats.iterator();
-        const print = try self.cheats.allocator.alloc([2]usize, self.cheats.count());
-        defer self.cheats.allocator.free(print);
 
-        var printLen: usize = 0;
         while (cheatIter.next()) |entry| {
             if (entry.key_ptr.* >= 100)
                 count += entry.value_ptr.*;
-            print[printLen] = .{ entry.value_ptr.*, entry.key_ptr.* };
-            printLen += 1;
         }
 
-        std.mem.sort([2]usize, print, {}, lt);
-
-        for (print) |cheat| {
-            std.debug.print("{} cheats that save {} picoseconds\n", .{ cheat[0], cheat[1] });
-        }
-        std.debug.print("\n", .{});
         return count;
     }
     pub fn solveP2(self: *Self) !usize {
         try self.findCheats(20);
         var count: usize = 0;
         var cheatIter = self.cheats.iterator();
-        const print = try self.cheats.allocator.alloc([2]usize, self.cheats.count());
-        defer self.cheats.allocator.free(print);
 
-        var printLen: usize = 0;
         while (cheatIter.next()) |entry| {
             if (entry.key_ptr.* >= 100)
                 count += entry.value_ptr.*;
-            if (entry.key_ptr.* >= 50) {
-                print[printLen] = .{ entry.value_ptr.*, entry.key_ptr.* };
-                printLen += 1;
-            }
-        }
-
-        std.mem.sort([2]usize, print, {}, lt);
-
-        for (print[0..printLen]) |cheat| {
-            std.debug.print("{} cheats that save {} picoseconds\n", .{ cheat[0], cheat[1] });
         }
 
         return count;
@@ -106,7 +82,7 @@ const Solution = struct {
     }
 
     fn findCheatsOriginatingAt(self: *Self, pos: geom.Index2, maxSteps: usize) !void {
-        const MIN_SAVE: usize = 0;
+        const MIN_SAVE: usize = 100;
 
         const originalDist = self.dists.get(pos).?;
         const optimizedMaxSteps = @min(maxSteps, originalDist);
@@ -118,14 +94,17 @@ const Solution = struct {
         for (min_y..max_y) |y| {
             for (min_x..max_x) |x| {
                 const end = geom.Index2{ .x = x, .y = y };
+                const steps = pos.hamiltonDist(end);
+                if (steps > maxSteps)
+                    continue;
+
                 if (self.dists.get(end)) |dist| {
-                    const steps = pos.hamiltonDist(end);
                     if (dist + steps >= originalDist)
                         continue;
                     const saved = originalDist - (dist + steps);
                     if (saved < MIN_SAVE)
                         continue;
-                    const prev = self.cheats.get(saved).?;
+                    const prev = self.cheats.get(saved) orelse 0;
                     try self.cheats.put(saved, prev + 1);
                 }
             }
