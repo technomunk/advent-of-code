@@ -5,7 +5,7 @@ fn Solution(comptime T: type, comptime rhs_len: usize) type {
     return struct {
         const Self = @This();
 
-        const P1_OPS: [2]*const fn (T, T) T = .{ &mul, &add };
+        const P1_OPS = .{ &mul, &add };
         const P2_OPS = .{ &mul, &add, &concat };
 
         p1: T,
@@ -30,18 +30,16 @@ fn Solution(comptime T: type, comptime rhs_len: usize) type {
                 operands += 1;
             }
 
-            if (canSolve(lhs, rhs[0..operands], &P1_OPS)) {
+            if (canSolve(lhs, rhs[0..operands], &P1_OPS))
                 self.p1 += lhs;
-            }
-            if (canSolve(lhs, rhs[0..operands], &P2_OPS)) {
+            if (canSolve(lhs, rhs[0..operands], &P2_OPS))
                 self.p2 += lhs;
-            }
         }
 
-        pub fn solveP1(self: *Self) T {
+        pub fn solveP1(self: *Self) !T {
             return self.p1;
         }
-        pub fn solveP2(self: *Self) T {
+        pub fn solveP2(self: *Self) !T {
             return self.p2;
         }
 
@@ -49,25 +47,22 @@ fn Solution(comptime T: type, comptime rhs_len: usize) type {
             // Reduce stack pressure of recursive calls by combining total and ops into 1 pointer
             const Equation = struct {
                 total: T,
-                comptime ops: []const *const fn (T, T) T = ops,
 
                 fn canSolve(self: *const @This(), acc: T, rem: []const T) bool {
                     if (rem.len == 1) {
-                        for (self.ops) |op| {
+                        for (ops) |op| {
                             if (op(acc, rem[0]) == self.total) {
                                 return true;
                             }
                         }
                         return false;
                     }
-                    if (acc > self.total) {
+                    if (acc > self.total)
                         return false;
-                    }
 
-                    for (self.ops) |op| {
-                        if (self.canSolve(op(acc, rem[0]), rem[1..])) {
+                    for (ops) |op| {
+                        if (self.canSolve(op(acc, rem[0]), rem[1..]))
                             return true;
-                        }
                     }
                     return false;
                 }

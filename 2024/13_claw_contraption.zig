@@ -22,9 +22,9 @@ fn Solution(comptime T: type) type {
         b_delta: Pt2 = undefined,
 
         fn parse(self: *Self, line: []const u8) !?Machine {
-            if (line.len == 0) {
+            if (line.len == 0)
                 return null;
-            }
+
             switch (self.state) {
                 .A => {
                     self.state = .B;
@@ -86,14 +86,14 @@ fn Solution(comptime T: type) type {
             }
         }
 
-        pub fn solveP1(self: *Self) usize {
+        pub fn solveP1(self: *Self) !usize {
             var total: usize = 0;
             for (self.machines.items) |*m| {
                 total += cheapestPath(m);
             }
             return total;
         }
-        pub fn solveP2(self: *Self) usize {
+        pub fn solveP2(self: *Self) !usize {
             var total: usize = 0;
             for (self.machines.items) |*m| {
                 m.prize.x += 10_000_000_000_000;

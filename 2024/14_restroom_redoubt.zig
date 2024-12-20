@@ -56,7 +56,7 @@ pub fn Solution(comptime T: type) type {
             try self.robots.append(try Robot.parse(line));
         }
 
-        pub fn solveP1(self: *Self) usize {
+        pub fn solveP1(self: *Self) !usize {
             var quadrants: [4]usize = .{ 0, 0, 0, 0 };
             for (self.robots.items) |r| {
                 const pos = step(r, 100);
@@ -70,7 +70,7 @@ pub fn Solution(comptime T: type) type {
             }
             return result;
         }
-        pub fn solveP2(self: *Self) usize {
+        pub fn solveP2(self: *Self) !usize {
             var steps: usize = 0;
             while (true) {
                 for (self.robots.items) |*r| {

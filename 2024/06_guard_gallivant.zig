@@ -31,9 +31,7 @@ const Solution = struct {
     }
 
     pub fn processLine(self: *Self, line: []const u8) !void {
-        if (self.grid.width == 1) {
-            self.grid.width = line.len;
-        }
+        self.grid.width = line.len;
 
         for (line, 0..) |c, i| {
             switch (c) {
@@ -50,24 +48,23 @@ const Solution = struct {
         self.grid.height += 1;
     }
 
-    pub fn solveP1(self: *Self) usize {
+    pub fn solveP1(self: *Self) !usize {
         var gx = self.guard_x;
         var gy = self.guard_y;
         var dx: isize = 0;
         var dy: isize = -1;
 
-        var grid = self.grid.clone() catch @panic("Couldn't clone grid");
+        var grid = try self.grid.clone();
         defer grid.deinit();
 
         while (gx >= 0 and gx < self.grid.width and gy >= 0 and gy < self.grid.height) {
-            grid.set(@intCast(gx), @intCast(gy), cell(dx, dy));
+            grid.set(.{ .x = @intCast(gx), .y = @intCast(gy) }, cell(dx, dy));
             const nx = gx + dx;
             const ny = gy + dy;
-            if (nx < 0 or nx >= self.grid.width or ny < 0 or ny >= self.grid.height) {
+            if (nx < 0 or nx >= self.grid.width or ny < 0 or ny >= self.grid.height)
                 break;
-            }
 
-            switch (grid.get(@intCast(nx), @intCast(ny))) {
+            switch (grid.getCpy(.{ .x = @intCast(nx), .y = @intCast(ny) })) {
                 Cell.obstacle => {
                     const old_dx = dx;
                     dx = -dy;
@@ -82,7 +79,7 @@ const Solution = struct {
 
         return grid.countAnyOf(&VISITED);
     }
-    pub fn solveP2(self: *Self) usize {
+    pub fn solveP2(self: *Self) !usize {
         var gx = self.guard_x;
         var gy = self.guard_y;
         var dx: isize = 0;
@@ -90,20 +87,16 @@ const Solution = struct {
 
         var newObstacles: usize = 0;
         while (gx >= 0 and gx < self.grid.width and gy >= 0 and gy < self.grid.height) {
-            if (self.grid.get(@intCast(gx), @intCast(gy)) != Cell.newObstacle) {
-                self.grid.set(@intCast(gx), @intCast(gy), cell(dx, dy));
-            }
+            self.grid.get(.{ .x = @intCast(gx), .y = @intCast(gy) }).* = cell(dx, dy);
             const nx = gx + dx;
             const ny = gy + dy;
-            if (nx < 0 or nx >= self.grid.width or ny < 0 or ny >= self.grid.height) {
+            if (nx < 0 or nx >= self.grid.width or ny < 0 or ny >= self.grid.height)
                 break;
-            }
 
-            if (self.obstacleCreatesLoop(nx, ny, dx, dy)) {
+            if (try self.obstacleCreatesLoop(nx, ny, dx, dy))
                 newObstacles += 1;
-            }
 
-            switch (self.grid.get(@intCast(nx), @intCast(ny))) {
+            switch (self.grid.getCpy(.{ .x = @intCast(nx), .y = @intCast(ny) })) {
                 Cell.obstacle => {
                     const old_dx = dx;
                     dx = -dy;
@@ -119,35 +112,32 @@ const Solution = struct {
         return newObstacles;
     }
 
-    fn obstacleCreatesLoop(self: *Self, x: isize, y: isize, odx: isize, ody: isize) bool {
-        if (self.grid.get(@intCast(x), @intCast(y)) != Cell.empty) {
+    fn obstacleCreatesLoop(self: *Self, x: isize, y: isize, odx: isize, ody: isize) !bool {
+        if (self.grid.getCpy(.{ .x = @intCast(x), .y = @intCast(y) }) != Cell.empty)
             return false;
-        }
 
         var dx = -ody;
         var dy = odx;
-        var grid = self.grid.clone() catch @panic("No clone");
+        var grid = try self.grid.clone();
         defer grid.deinit();
 
-        grid.set(@intCast(x), @intCast(y), Cell.newObstacle);
+        grid.set(.{ .x = @intCast(x), .y = @intCast(y) }, Cell.newObstacle);
         var gx = x - odx;
         var gy = y - ody;
 
         var steps: usize = 0;
         while (gx >= 0 and gx < grid.width and gy >= 0 and gy < grid.height) {
-            grid.set(@intCast(gx), @intCast(gy), cell(dx, dy));
+            grid.set(.{ .x = @intCast(gx), .y = @intCast(gy) }, cell(dx, dy));
             steps += 1;
-            if (steps == 10_000) {
+            if (steps == 10_000)
                 return true;
-            }
 
             const nx = gx + dx;
             const ny = gy + dy;
-            if (nx < 0 or nx >= grid.width or ny < 0 or ny >= grid.height) {
+            if (nx < 0 or nx >= grid.width or ny < 0 or ny >= grid.height)
                 return false;
-            }
 
-            const nextCell = grid.get(@intCast(nx), @intCast(ny));
+            const nextCell = grid.getCpy(.{ .x = @intCast(nx), .y = @intCast(ny) });
             if (nextCell == Cell.obstacle or nextCell == Cell.newObstacle) {
                 const old_dx = dx;
                 dx = -dy;

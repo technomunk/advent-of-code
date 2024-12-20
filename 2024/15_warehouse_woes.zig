@@ -192,8 +192,8 @@ const Solution = struct {
         }
     }
 
-    pub fn solveP1(self: *Self) usize {
-        var copy = self.map.clone() catch @panic("OOM");
+    pub fn solveP1(self: *Self) !usize {
+        var copy = try self.map.clone();
         defer copy.deinit();
         var map = Map(Tile).create(copy);
         for (self.directions.items) |d| {
@@ -202,8 +202,8 @@ const Solution = struct {
         return map.sumBoxCoords();
     }
 
-    pub fn solveP2(self: *Self) usize {
-        var copy = widen(self.map) catch @panic("OOM");
+    pub fn solveP2(self: *Self) !usize {
+        var copy = try widen(self.map);
         defer copy.deinit();
         var map = Map(WideTile).create(copy);
         for (self.directions.items) |d| {

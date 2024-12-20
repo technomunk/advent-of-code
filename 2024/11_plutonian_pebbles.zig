@@ -28,10 +28,10 @@ fn Solution(comptime T: type) type {
             }
         }
 
-        pub fn solveP1(self: *Self) usize {
+        pub fn solveP1(self: *Self) !usize {
             return self.p1;
         }
-        pub fn solveP2(self: *Self) usize {
+        pub fn solveP2(self: *Self) !usize {
             return self.p2;
         }
 
@@ -41,14 +41,13 @@ fn Solution(comptime T: type) type {
             }
 
             if (times == 1) {
-                if (split(n) != null) {
+                if (split(n) != null)
                     return 2;
-                }
                 return 1;
             }
-            if (n == 0) {
+            if (n == 0)
                 return self.blink(times - 1, 1);
-            }
+
             if (split(n)) |ans| {
                 const blinks = try self.blink(times - 1, ans[0]) + try self.blink(times - 1, ans[1]);
                 try self.cache.put(.{ n, times }, blinks);

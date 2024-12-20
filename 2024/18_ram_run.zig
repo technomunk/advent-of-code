@@ -24,9 +24,10 @@ const PFCtx = struct {
     space: *const geom.DenseGrid(Cell),
 
     var coords: [4]geom.Index2 = undefined;
+    var neighbors: [4]geom.Index2 = undefined;
     pub fn getNeighbors(self: PFCtx, node: geom.Index2) []geom.Index2 {
         var foundNeighbors: usize = 0;
-        for (self.space.cardinalNeighbors(node)) |n| {
+        for (self.space.cardinalNeighbors(node, &neighbors)) |n| {
             if (self.space.getCpy(n) == .empty) {
                 coords[foundNeighbors] = n;
                 foundNeighbors += 1;
@@ -89,14 +90,14 @@ const Solution = struct {
 
         return try self.pathfinder.lowestPathScore(FROM, TO);
     }
-    pub fn solveP2(self: *Self) geom.Index2 {
+    pub fn solveP2(self: *Self) !geom.Index2 {
         for (self.bytes.items[1024..]) |b| {
             self.space.set(b, .filled);
             self.pathfinder.reset();
             self.pathfinder.pathfind(FROM, TO) catch |err| {
                 switch (err) {
                     PathFinder.PathError.NoPathExists => return b,
-                    else => @panic("Something went wrong"),
+                    else => return err,
                 }
             };
         }

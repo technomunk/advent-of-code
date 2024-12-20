@@ -30,39 +30,36 @@ fn Solution(comptime T: type) type {
         }
 
         pub fn processLine(self: *Self, line: []const u8) !void {
-            if (self.size.x < line.len) {
+            if (self.size.x < line.len)
                 self.size.x = @intCast(line.len);
-            }
 
             for (line, 0..) |c, x| {
-                if (c == '.') {
+                if (c == '.')
                     continue;
-                }
                 try self.addAntenna(c, Pt2{ .x = @intCast(x), .y = self.size.y });
             }
             self.size.y += 1;
         }
 
-        pub fn solveP1(self: *Self) usize {
+        pub fn solveP1(self: *Self) !usize {
             var it = self.antennae.iterator();
             while (it.next()) |entry| {
-                self.generateStrictAntinodes(entry.value_ptr.items) catch @panic("OOM");
+                try self.generateStrictAntinodes(entry.value_ptr.items);
             }
             return self.antinodes.count();
         }
-        pub fn solveP2(self: *Self) usize {
+        pub fn solveP2(self: *Self) !usize {
             var it = self.antennae.iterator();
             while (it.next()) |entry| {
-                self.generateHarmonicAntinodes(entry.value_ptr.items) catch @panic("OOM");
+                try self.generateHarmonicAntinodes(entry.value_ptr.items);
             }
             return self.antinodes.count();
         }
 
         fn addAntenna(self: *Self, freq: u8, pos: Pt2) !void {
             const entry = try self.antennae.getOrPut(freq);
-            if (!entry.found_existing) {
+            if (!entry.found_existing)
                 entry.value_ptr.* = std.ArrayList(Pt2).init(self.antennae.allocator);
-            }
             try entry.value_ptr.append(pos);
         }
 
@@ -72,15 +69,13 @@ fn Solution(comptime T: type) type {
             while (combs.next()) |pair| {
                 var diff = pair[0].sub(pair[1].*);
                 node = pair[0].add(diff);
-                if (node.isInside(Pt2.ZERO, self.size)) {
+                if (node.isInside(Pt2.ZERO, self.size))
                     try self.antinodes.add(node);
-                }
 
                 diff = pair[1].sub(pair[0].*);
                 node = pair[1].add(diff);
-                if (node.isInside(Pt2.ZERO, self.size)) {
+                if (node.isInside(Pt2.ZERO, self.size))
                     try self.antinodes.add(node);
-                }
             }
         }
 

@@ -28,16 +28,15 @@ fn Reports(comptime T: type, comptime MAX_LEN: usize) type {
             if (_isSafe(report[0..index])) {
                 self.p1 += 1;
                 self.p2 += 1;
-            } else if (_isSafeRemovingOne(report[0..index])) {
+            } else if (_isSafeRemovingOne(report[0..index]))
                 self.p2 += 1;
-            }
         }
 
-        pub fn solveP1(self: *Self) T {
+        pub fn solveP1(self: *Self) !T {
             return self.p1;
         }
 
-        pub fn solveP2(self: *Self) T {
+        pub fn solveP2(self: *Self) !T {
             return self.p2;
         }
 

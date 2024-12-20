@@ -31,7 +31,7 @@ fn Solution(comptime T: type) type {
             try self.right.append(r);
         }
 
-        pub fn solveP1(self: *Self) T {
+        pub fn solveP1(self: *Self) !T {
             std.mem.sort(T, self.left.items, {}, std.sort.asc(T));
             std.mem.sort(T, self.right.items, {}, std.sort.asc(T));
             var total: T = 0;
@@ -41,7 +41,7 @@ fn Solution(comptime T: type) type {
             return total;
         }
 
-        pub fn solveP2(self: *Self) T {
+        pub fn solveP2(self: *Self) !T {
             for (self.right.items) |r| {
                 const entry = self.counts.getOrPutValue(r, 0) catch {
                     @panic("OOM");

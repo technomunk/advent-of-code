@@ -18,28 +18,24 @@ const Solution = struct {
     }
 
     pub fn processLine(self: *Self, line: []const u8) !void {
-        if (self.width == 0) {
-            self.width = line.len;
-        }
+        self.width = line.len;
         try self.chars.appendSlice(line);
     }
 
-    pub fn solveP1(self: *Self) usize {
+    pub fn solveP1(self: *Self) !usize {
         var result: usize = 0;
         for (self.chars.items, 0..) |c, i| {
-            if (c == 'X') {
+            if (c == 'X')
                 result += self._countXmas(i % self.width, i / self.width);
-            }
         }
         return result;
     }
 
-    pub fn solveP2(self: *Self) usize {
+    pub fn solveP2(self: *Self) !usize {
         var result: usize = 0;
         for (self.chars.items, 0..) |c, i| {
-            if (c == 'A' and self._isCrossMas(i % self.width, i / self.width)) {
+            if (c == 'A' and self._isCrossMas(i % self.width, i / self.width))
                 result += 1;
-            }
         }
         return result;
     }
@@ -79,9 +75,8 @@ const Solution = struct {
 
     fn _isCrossMas(self: *Self, x: usize, y: usize) bool {
         const height = self.chars.items.len / self.width;
-        if (x < 1 or x > self.width - 2 or y < 1 or y > height - 2) {
+        if (x < 1 or x > self.width - 2 or y < 1 or y > height - 2)
             return false;
-        }
 
         return self._isPosDiagAt(x, y) and self._isNegDiagAt(x, y);
     }

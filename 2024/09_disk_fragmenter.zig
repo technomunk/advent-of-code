@@ -35,13 +35,13 @@ fn Solution(comptime TId: type) type {
             }
         }
 
-        pub fn solveP1(self: *Self) usize {
-            const disk = util.clone(TId, self.disk.allocator, self.disk.items) catch @panic("OOM");
+        pub fn solveP1(self: *Self) !usize {
+            const disk = try util.clone(TId, self.disk.allocator, self.disk.items);
             defer self.disk.allocator.free(disk);
             refrag(disk);
             return checksum(disk);
         }
-        pub fn solveP2(self: *Self) usize {
+        pub fn solveP2(self: *Self) !usize {
             defrag(self.disk.items);
             return checksum(self.disk.items);
         }
@@ -76,9 +76,8 @@ fn Solution(comptime TId: type) type {
         fn checksum(disk: []TId) usize {
             var result: usize = 0;
             for (disk, 0..) |id, idx| {
-                if (id == EMPTY_ID) {
+                if (id == EMPTY_ID)
                     continue;
-                }
                 result += id * idx;
             }
             return result;
@@ -135,9 +134,8 @@ fn Solution(comptime TId: type) type {
                 pos -= 1;
                 len += 1;
             }
-            if (len > 0) {
+            if (len > 0)
                 return Segment{ .id = id, .len = len, .pos = pos + 1 };
-            }
             return null;
         }
         fn swap(disk: []TId, a: Segment, b: Segment) void {

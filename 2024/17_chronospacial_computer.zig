@@ -139,7 +139,7 @@ fn Solution(comptime T: type) type {
             }
         }
 
-        pub fn solveP1(self: *Self) usize {
+        pub fn solveP1(self: *Self) !usize {
             self.computer.exec(self.program.items);
             var includeSep = false;
             for (self.computer.output.items) |o| {
@@ -153,8 +153,8 @@ fn Solution(comptime T: type) type {
             std.debug.print("\n", .{});
             return 1;
         }
-        pub fn solveP2(self: *Self) usize {
-            return @intCast(self.searchForRegisterVal() catch @panic("OOPS"));
+        pub fn solveP2(self: *Self) !usize {
+            return @intCast(try self.searchForRegisterVal());
         }
 
         fn searchForRegisterVal(self: *Self) !u64 {

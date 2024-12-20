@@ -24,9 +24,7 @@ fn Solution(comptime T: type) type {
         }
 
         pub fn processLine(self: *Self, line: []const u8) !void {
-            if (line.len > self.map.width) {
-                self.map.width = line.len;
-            }
+            self.map.width = line.len;
             var new = try self.map.values.addManyAsSlice(line.len);
             for (line, 0..) |c, i| {
                 new[i] = @intCast(c - '0');
@@ -34,115 +32,110 @@ fn Solution(comptime T: type) type {
             self.map.height += 1;
         }
 
-        pub fn solveP1(self: *Self) usize {
+        pub fn solveP1(self: *Self) !usize {
             var answer: usize = 0;
             for (self.map.values.items, 0..) |h, i| {
-                if (h != 0) {
+                if (h != 0)
                     continue;
-                }
 
                 const x = i % self.map.width;
                 const y = i / self.map.width;
-                answer += self.measureScore(x, y);
+                answer += try self.measureScore(x, y);
             }
             return answer;
         }
-        pub fn solveP2(self: *Self) usize {
+        pub fn solveP2(self: *Self) !usize {
             var answer: usize = 0;
             for (self.map.values.items, 0..) |h, i| {
-                if (h != 0) {
+                if (h != 0)
                     continue;
-                }
 
                 const x = i % self.map.width;
                 const y = i / self.map.width;
-                answer += self.measureRating(x, y);
+                answer += try self.measureRating(x, y);
             }
             return answer;
         }
 
-        fn measureScore(self: *Self, x: usize, y: usize) usize {
+        fn measureScore(self: *Self, x: usize, y: usize) !usize {
             // dfs
             var result: usize = 0;
 
             // note that the stack should be empty even after it has been used
-            self.stack.append(.{ .x = x, .y = y }) catch @panic("OOM");
+            try self.stack.append(.{ .x = x, .y = y });
             var seen = util.Set(geom.Index2).init(self.stack.allocator);
             defer seen.deinit();
 
-            while (self.stack.popOrNull()) |coord| {
-                if (seen.has(coord)) {
-                    continue;
-                }
+            var neighbors: [4]geom.Index2 = undefined;
 
-                seen.add(coord) catch @panic("OOM");
-                const h = self.map.get(coord) + 1;
+            while (self.stack.popOrNull()) |coord| {
+                if (seen.has(coord))
+                    continue;
+
+                try seen.add(coord);
+                const h = self.map.getCpy(coord) + 1;
                 if (h == 10) {
                     result += 1;
                     continue;
                 }
 
-                for (self.map.cardinalNeighbors(coord)) |n| {
-                    if (self.map.get(n) == h) {
+                for (self.map.cardinalNeighbors(coord, &neighbors)) |n| {
+                    if (self.map.getCpy(n) == h)
                         self.stack.append(n) catch @panic("OOM");
-                    }
                 }
             }
 
             return result;
         }
-        fn measureRating(self: *Self, x: usize, y: usize) usize {
+        fn measureRating(self: *Self, x: usize, y: usize) !usize {
             // dfs
             var result: usize = 0;
+            var neighbors: [4]geom.Index2 = undefined;
 
             // note that the stack should be empty even after it has been used
-            self.stack.append(.{ .x = x, .y = y }) catch @panic("OOM");
+            try self.stack.append(.{ .x = x, .y = y });
 
             while (self.stack.popOrNull()) |coord| {
-                const h = self.map.get(coord) + 1;
+                const h = self.map.getCpy(coord) + 1;
                 if (h == 10) {
                     result += 1;
                     continue;
                 }
 
-                for (self.map.cardinalNeighbors(coord)) |n| {
-                    if (self.map.get(n) == h) {
-                        self.stack.append(n) catch @panic("OOM");
-                    }
+                for (self.map.cardinalNeighbors(coord, &neighbors)) |n| {
+                    if (self.map.getCpy(n) == h)
+                        try self.stack.append(n);
                 }
             }
 
             return result;
         }
 
-        fn measureTrailhead(self: *Self, x: usize, y: usize, comptime isScore: bool) usize {
+        fn measureTrailhead(self: *Self, x: usize, y: usize, comptime isScore: bool) !usize {
             // dfs
             var result: usize = 0;
 
             // note that the stack should be empty even after it has been used
-            self.stack.append(.{ .x = x, .y = y }) catch @panic("OOM");
+            try self.stack.append(.{ .x = x, .y = y });
             self.seen.clearRetainingCapacity();
 
             while (self.stack.popOrNull()) |coord| {
-                if (self.seen.has(coord)) {
+                if (self.seen.has(coord))
                     continue;
-                }
 
                 const h = self.map.get(coord) + 1;
                 if (h == 10) {
                     result += 1;
-                    if (isScore) {
-                        self.seen.add(coord) catch @panic("OOM");
-                    }
+                    if (isScore)
+                        try self.seen.add(coord);
                     continue;
                 } else {
-                    self.seen.add(coord) catch @panic("OOM");
+                    try self.seen.add(coord);
                 }
 
                 for (self.map.cardinalNeighbors(coord)) |n| {
-                    if (self.map.get(n) == h) {
-                        self.stack.append(n) catch @panic("OOM");
-                    }
+                    if (self.map.get(n) == h)
+                        try self.stack.append(n);
                 }
             }
 

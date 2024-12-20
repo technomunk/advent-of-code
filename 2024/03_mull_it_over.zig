@@ -26,13 +26,10 @@ fn Solution(comptime T: type) type {
                 if (hit.idx == 0) {
                     if (try _grabValues(line[hit.pos + 4 ..])) |vals| {
                         self.p1 += vals.a * vals.b;
-                        if (self._enable) {
+                        if (self._enable)
                             self.p2 += vals.a * vals.b;
-                        }
                         pos = hit.pos + 4 + vals.end;
-                    } else {
-                        pos = hit.pos + 4;
-                    }
+                    } else pos = hit.pos + 4;
                 } else {
                     pos = hit.pos + SYMBOLS[hit.idx].len;
                     self._enable = hit.idx == 1;
@@ -40,11 +37,11 @@ fn Solution(comptime T: type) type {
             }
         }
 
-        pub fn solveP1(self: *Self) T {
+        pub fn solveP1(self: *Self) !T {
             return self.p1;
         }
 
-        pub fn solveP2(self: *Self) T {
+        pub fn solveP2(self: *Self) !T {
             return self.p2;
         }
 
@@ -65,12 +62,10 @@ fn Solution(comptime T: type) type {
                 .end = undefined,
             };
             for (slice, 0..) |ch, i| {
-                if (std.ascii.isDigit(ch)) {
+                if (std.ascii.isDigit(ch))
                     continue;
-                }
-                if (ch != expectedEnd) {
+                if (ch != expectedEnd)
                     return null;
-                }
 
                 switch (state) {
                     State.a => {
