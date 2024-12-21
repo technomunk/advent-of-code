@@ -124,7 +124,7 @@ pub fn Point2(comptime T: type) type {
             return Index2{ .x = @intCast(self.x), .y = @intCast(self.y) };
         }
 
-        pub fn hamiltonDist(a: Self, b: Self) usize {
+        pub fn manhattanDist(a: Self, b: Self) usize {
             return @max(a.x, b.x) - @min(a.x, b.x) + @max(a.y, b.y) - @min(a.y, b.y);
         }
     };
@@ -165,7 +165,7 @@ pub const Index2 = struct {
         try writer.print("[{}, {}]", .{ self.x, self.y });
     }
 
-    pub fn hamiltonDist(a: Index2, b: Index2) usize {
+    pub fn manhattanDist(a: Index2, b: Index2) usize {
         return @max(a.x, b.x) - @min(a.x, b.x) + @max(a.y, b.y) - @min(a.y, b.y);
     }
 };
