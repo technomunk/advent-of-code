@@ -2,6 +2,8 @@ const std = @import("std");
 const util = @import("util.zig");
 const geom = @import("geom.zig");
 
+const Pt2 = geom.Point2(i32);
+
 const Key = enum {
     up,
     a,
@@ -9,7 +11,7 @@ const Key = enum {
     down,
     right,
 
-    pub fn pos(self: Key) geom.Index2 {
+    pub fn pos(self: Key) Pt2 {
         return switch (self) {
             .up => .{ .x = 1, .y = 0 },
             .a => .{ .x = 2, .y = 0 },
@@ -40,7 +42,7 @@ const Key = enum {
     }
 };
 
-fn getNumericPos(n: u8) geom.Index2 {
+fn getNumericPos(n: u8) Pt2 {
     return switch (n) {
         '0' => .{ .x = 1, .y = 3 },
         '1' => .{ .x = 0, .y = 2 },
@@ -67,7 +69,7 @@ const Solution = struct {
 
     pub fn init(allocator: std.mem.Allocator) Self {
         return Self{
-            .seq = std.ArrayList(Key).init(allocator),
+            .seq = std.ArrayList(Key).initCapacity(allocator, 256) catch @panic("OOM"),
         };
     }
     pub fn deinit(self: *Self) void {
@@ -75,21 +77,14 @@ const Solution = struct {
     }
 
     pub fn processLine(self: *Self, line: []const u8) !void {
-        try self.seq.ensureTotalCapacity(256);
         self.seq.clearRetainingCapacity();
-        var keys = try self.navNumeric(line); // numeric -> directional 1
-        std.debug.print("{s} =>", .{line});
-        Key.print(keys);
-        keys = try self.navDirectional(keys); // directional 1 -> directional 2  // one extra key here
-        std.debug.print(" => ", .{});
-        Key.print(keys);
-        keys = try self.navDirectional(keys); // directional 2 -> manual
-        std.debug.print(" => ", .{});
-        Key.print(keys);
-        std.debug.print("\n", .{});
-        const cmplx = try calcComplexity(line, keys);
-        std.debug.print("{s}: {}\n", .{ line, cmplx });
-        self.p1 += cmplx;
+
+        var keys = try self.navNumeric(line);
+        for (0..2) |_| {
+            keys = try self.navDirectional(keys);
+        }
+
+        self.p1 += try calcComplexity(line, keys);
     }
 
     pub fn solveP1(self: *Self) !usize {
@@ -99,78 +94,116 @@ const Solution = struct {
         return self.p2;
     }
 
-    fn navNumeric(self: *Self, combination: []const u8) ![]const Key {
-        const seqStart = self.seq.items.len;
+    fn calcComplexity(line: []const u8, keys: []const Key) !usize {
+        return keys.len * try std.fmt.parseInt(usize, line[0 .. line.len - 1], 10);
+    }
 
-        var pos = geom.Index2{ .x = 2, .y = 3 };
-        for (combination) |c| {
-            // To get the shortest path we should move as left first (if possible)
-            // then down
-            // then up or right
-            const cPos = getNumericPos(c);
-            while (!pos.eq(cPos)) {
-                if (pos.x > cPos.x and (pos.x > 1 or pos.y < 3)) {
-                    try self.seq.append(.left);
-                    pos.x -= 1;
-                    continue;
-                }
-                if (pos.y < cPos.y) {
-                    try self.seq.append(.down);
-                    pos.y += 1;
-                    continue;
-                }
-                if (pos.x < cPos.x) {
-                    try self.seq.append(.right);
-                    pos.x += 1;
-                    continue;
-                }
-                if (pos.y > cPos.y) {
-                    try self.seq.append(.up);
-                    pos.y -= 1;
-                    continue;
-                }
-            }
-            try self.seq.append(.a);
-        }
-        return self.seq.items[seqStart..];
+    fn navNumeric(self: *Self, combination: []const u8) ![]const Key {
+        return self.navGeneric(u8, combination);
     }
 
     fn navDirectional(self: *Self, combination: []const Key) ![]const Key {
+        return self.navGeneric(Key, combination);
+    }
+
+    fn navGeneric(
+        self: *Self,
+        comptime T: type,
+        combination: []const T,
+    ) ![]const Key {
+        const Spec = struct {
+            getPos: fn (T) Pt2,
+            safePath: fn (*Self, Pt2) std.mem.Allocator.Error!void,
+            startPos: Pt2,
+            trap: Pt2,
+        };
+        const spec: Spec = comptime switch (T) {
+            u8 => .{
+                .getPos = getNumericPos,
+                .safePath = safePathNumeric,
+                .startPos = .{ .x = 2, .y = 3 },
+                .trap = .{ .x = 0, .y = 3 },
+            },
+            Key => .{
+                .getPos = Key.pos,
+                .safePath = safePathDirectional,
+                .startPos = .{ .x = 2, .y = 0 },
+                .trap = .{ .x = 0, .y = 0 },
+            },
+            else => @compileError("Unknown combination type"),
+        };
+
         const seqStart = self.seq.items.len;
 
-        var pos = geom.Index2{ .x = 2, .y = 0 };
+        var pos = spec.startPos;
         for (combination) |c| {
-            const cPos = c.pos();
-            while (!pos.eq(cPos)) {
-                if (pos.x > cPos.x and (pos.x > 1 or pos.y > 0)) {
-                    try self.seq.append(.left);
-                    pos.x -= 1;
-                    continue;
-                }
-                if (pos.y < cPos.y) {
-                    try self.seq.append(.down);
-                    pos.y += 1;
-                    continue;
-                }
-                if (pos.x < cPos.x) {
-                    try self.seq.append(.right);
-                    pos.x += 1;
-                    continue;
-                }
-                if (pos.y > cPos.y) {
-                    try self.seq.append(.up);
-                    pos.y -= 1;
-                    continue;
-                }
-            }
+            const cPos = spec.getPos(c);
+            try self.findPath(pos, cPos, spec.trap, spec.safePath);
+            pos = cPos;
             try self.seq.append(.a);
         }
         return self.seq.items[seqStart..];
     }
 
-    fn calcComplexity(line: []const u8, keys: []const Key) !usize {
-        _ = line;
-        return keys.len;
+    fn findPath(
+        self: *Self,
+        from: Pt2,
+        to: Pt2,
+        trap: Pt2,
+        comptime safePath: fn (*Self, Pt2) std.mem.Allocator.Error!void,
+    ) !void {
+        const delta = to.sub(from);
+        if ((from.x == trap.x and to.y == trap.y) or (from.y == trap.y and to.x == trap.x)) {
+            try safePath(self, delta);
+        } else {
+            try self.optimalPath(delta);
+        }
+    }
+
+    fn optimalPath(self: *Self, delta: Pt2) !void {
+        try self.left(delta);
+        try self.down(delta);
+        try self.right(delta);
+        try self.up(delta);
+    }
+
+    fn safePathNumeric(self: *Self, delta: Pt2) std.mem.Allocator.Error!void {
+        try self.up(delta);
+        try self.right(delta);
+        try self.down(delta);
+        try self.left(delta);
+    }
+
+    fn safePathDirectional(self: *Self, delta: Pt2) std.mem.Allocator.Error!void {
+        try self.down(delta);
+        try self.left(delta);
+        try self.up(delta);
+        try self.right(delta);
+    }
+
+    fn left(self: *Self, delta: Pt2) !void {
+        var t = delta.x;
+        while (t < 0) : (t += 1) {
+            try self.seq.append(.left);
+        }
+    }
+    fn right(self: *Self, delta: Pt2) !void {
+        var t = delta.x;
+        while (t > 0) : (t -= 1) {
+            try self.seq.append(.right);
+        }
+    }
+    fn up(self: *Self, delta: Pt2) !void {
+        var t = delta.y;
+        while (t < 0) : (t += 1) {
+            try self.seq.append(.up);
+        }
+    }
+    fn down(self: *Self, delta: Pt2) !void {
+        var t = delta.y;
+        while (t > 0) : (t -= 1) {
+            try self.seq.append(.down);
+        }
     }
 };
 
