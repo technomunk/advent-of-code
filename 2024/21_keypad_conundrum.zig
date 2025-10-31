@@ -4,87 +4,78 @@ const geom = @import("geom.zig");
 
 const Pt2 = geom.Point2(i32);
 
-const Key = enum {
-    up,
-    a,
-    left,
-    down,
-    right,
+const Numpad = struct {
+    pub const trap = Pt2{ .x = 0, .y = 3 };
+    pub const startPos = pos('A');
 
-    pub fn pos(self: Key) Pt2 {
-        return switch (self) {
-            .up => .{ .x = 1, .y = 0 },
-            .a => .{ .x = 2, .y = 0 },
-            .left => .{ .x = 0, .y = 1 },
-            .down => .{ .x = 1, .y = 1 },
-            .right => .{ .x = 2, .y = 1 },
+    pub fn pos(ch: u8) Pt2 {
+        return switch (ch) {
+            '0' => .{ .x = 1, .y = 3 },
+            '1' => .{ .x = 0, .y = 2 },
+            '2' => .{ .x = 1, .y = 2 },
+            '3' => .{ .x = 2, .y = 2 },
+            '4' => .{ .x = 0, .y = 1 },
+            '5' => .{ .x = 1, .y = 1 },
+            '6' => .{ .x = 2, .y = 1 },
+            '7' => .{ .x = 0, .y = 0 },
+            '8' => .{ .x = 1, .y = 0 },
+            '9' => .{ .x = 2, .y = 0 },
+            'A' => .{ .x = 2, .y = 3 },
+            else => std.debug.panic("Unknown numeric key: {c}", .{ch}),
         };
-    }
-
-    pub fn format(self: Key, comptime _: []const u8, _: std.fmt.FormatOptions, writer: anytype) !void {
-        try writer.print("{c}", .{self.char()});
-    }
-
-    pub fn char(self: Key) u8 {
-        return switch (self) {
-            .up => '^',
-            .a => 'A',
-            .left => '<',
-            .down => 'v',
-            .right => '>',
-        };
-    }
-
-    pub fn print(keys: []const Key) void {
-        for (keys) |k| {
-            std.debug.print("{c}", .{k.char()});
-        }
     }
 };
 
-fn getNumericPos(n: u8) Pt2 {
-    return switch (n) {
-        '0' => .{ .x = 1, .y = 3 },
-        '1' => .{ .x = 0, .y = 2 },
-        '2' => .{ .x = 1, .y = 2 },
-        '3' => .{ .x = 2, .y = 2 },
-        '4' => .{ .x = 0, .y = 1 },
-        '5' => .{ .x = 1, .y = 1 },
-        '6' => .{ .x = 2, .y = 1 },
-        '7' => .{ .x = 0, .y = 0 },
-        '8' => .{ .x = 1, .y = 0 },
-        '9' => .{ .x = 2, .y = 0 },
-        'A' => .{ .x = 2, .y = 3 },
-        else => std.debug.panic("Unknown numeric key: {}", .{n}),
-    };
-}
+const Dirpad = struct {
+    pub const trap = Pt2{ .x = 0, .y = 0 };
+    pub const startPos = pos('A');
+
+    pub fn pos(ch: u8) Pt2 {
+        return switch (ch) {
+            '^' => .{ .x = 1, .y = 0 },
+            'A' => .{ .x = 2, .y = 0 },
+            '<' => .{ .x = 0, .y = 1 },
+            'v' => .{ .x = 1, .y = 1 },
+            '>' => .{ .x = 2, .y = 1 },
+            else => std.debug.panic("Unknown directional key: {c}", .{ch}),
+        };
+    }
+};
 
 const Solution = struct {
     const Self = @This();
+    const TransitionMap = std.AutoHashMap([2]u8, usize);
 
-    seq: std.ArrayList(Key),
+    transitions: TransitionMap,
+    buffer: TransitionMap,
 
     p1: usize = 0,
     p2: usize = 0,
 
     pub fn init(allocator: std.mem.Allocator) Self {
         return Self{
-            .seq = std.ArrayList(Key).initCapacity(allocator, 256) catch @panic("OOM"),
+            .transitions = TransitionMap.init(allocator),
+            .buffer = TransitionMap.init(allocator),
         };
     }
     pub fn deinit(self: *Self) void {
-        self.seq.deinit();
+        self.transitions.deinit();
+        self.buffer.deinit();
     }
 
     pub fn processLine(self: *Self, line: []const u8) !void {
-        self.seq.clearRetainingCapacity();
-
-        var keys = try self.navNumeric(line);
+        try self.navNumeric(line);
         for (0..2) |_| {
-            keys = try self.navDirectional(keys);
+            try self.navDirectional();
         }
 
-        self.p1 += try calcComplexity(line, keys);
+        self.p1 += try calcComplexity(line);
+
+        for (2..25) |_| {
+            try self.navDirectional();
+        }
+
+        self.p2 += try calcComplexity(line);
     }
 
     pub fn solveP1(self: *Self) !usize {
@@ -94,15 +85,15 @@ const Solution = struct {
         return self.p2;
     }
 
-    fn calcComplexity(line: []const u8, keys: []const Key) !usize {
+    fn calcComplexity(self: *const Self, line: []const u8) !usize {
         return keys.len * try std.fmt.parseInt(usize, line[0 .. line.len - 1], 10);
     }
 
-    fn navNumeric(self: *Self, combination: []const u8) ![]const Key {
+    fn navNumeric(self: *Self, combination: []const u8) !void {
         return self.navGeneric(u8, combination);
     }
 
-    fn navDirectional(self: *Self, combination: []const Key) ![]const Key {
+    fn navDirectional(self: *Self) !void {
         return self.navGeneric(Key, combination);
     }
 

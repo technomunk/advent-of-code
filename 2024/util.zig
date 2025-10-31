@@ -10,10 +10,14 @@ pub fn readLine(reader: anytype, buffer: []u8) !?[]const u8 {
     }
 }
 
-pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
+pub const ExecConfig = struct {
+    buffer_len: usize = 64,
+    safe_allocator: bool = true,
+};
+pub fn execSolution(comptime Solution: type, comptime config: ExecConfig) !void {
     var timer = try std.time.Timer.start();
 
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.GeneralPurposeAllocator(.{ .safety = config.safe_allocator }){};
     const allocator = gpa.allocator();
     defer {
         _ = gpa.deinit();
@@ -25,7 +29,7 @@ pub fn execSolution(comptime Solution: type, comptime buffer_len: usize) !void {
     const stdin = std.io.getStdIn().reader();
     const stdout = std.io.getStdOut().writer();
 
-    var buffer: [buffer_len]u8 = undefined;
+    var buffer: [config.buffer_len]u8 = undefined;
 
     const setupT = timer.read();
 
@@ -109,7 +113,7 @@ pub fn Set(comptime T: type) type {
         pub fn add(self: *Self, value: T) !void {
             try self.backing.put(value, void{});
         }
-        pub fn has(self: *Self, value: T) bool {
+        pub fn has(self: *const Self, value: T) bool {
             return self.backing.get(value) != null;
         }
         pub fn count(self: *Self) u32 {
