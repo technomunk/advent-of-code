@@ -241,5 +241,6 @@ cython_debug/
 .zig-cache/
 zig-out/
 
-# C ignore files
-solution
+# raku ignore files
+.precomp
+lib/.precomp

@@ -4,16 +4,13 @@ Done using basic C, as I wanted to check my low-level coding skills this year.
 
 ## Installation
 
-### Windows
+Install [Raku](https://raku.org/nav/1/install).
 
-Install [Clang](https://clang.org/).
-
-### Linux
-
-Should come with `gcc` to begin with :innocent:
+1. Install `rakubrew`
+2. Run `rakubrew download`
 
 ## Running
 
 ```sh
-./run.sh DAY < DATA_FILE_PATH
+raku DAY < DATA_FILE_PATH
 ```
