@@ -4,11 +4,11 @@ use grid;
 sub parse-grid(Seq $lines) is rw {
     my $width = $lines[0].chars;
     my $height = $lines.elems;
-    my @grid[$height;$width] of Str;
+    my @grid[$height;$width];
 
     for ^$height -> $y {
         my $chars = $lines[$y].comb;
-        @grid[$y;$_] = $chars[$_] for ^$width;
+        @grid[$y;$_] = $chars[$_] ~~ '@' for ^$width;
     }
     @grid does Grid;
 
@@ -16,14 +16,14 @@ sub parse-grid(Seq $lines) is rw {
 }
 
 sub is-movable(Grid $grid, UInt $x, UInt $y --> Bool) {
-    $grid[$y;$x] ~~ '@' && ($grid.neighbors($x, $y).grep('@') < 4);
+    $grid[$y;$x] && ($grid.neighbors($x, $y).sum < 4);
 }
 
 sub count-movable(Grid $grid --> UInt) {
     my $count = 0;
     for ^$grid.height -> $y {
         for ^$grid.width -> $x {
-            next if $grid[$y;$x] ~~ '.';
+            next if !$grid[$y;$x];
             $count += $grid.&is-movable($x, $y);
         }
     }
@@ -37,9 +37,9 @@ sub count-movable-with-removal(Grid $grid) {
         $check-more = False;
         for ^$grid.height -> $y {
             for ^$grid.width -> $x {
-                next if $grid[$y;$x] ~~ '.';
+                next if !$grid[$y;$x];
                 if $grid.&is-movable($x, $y) {
-                    $grid[$y;$x] = '.';
+                    $grid[$y;$x] = False;
                     $count += 1;
                     $check-more = True;
                 }
