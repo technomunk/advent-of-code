@@ -22,3 +22,13 @@ role Grid is export {
         @result
     }
 }
+
+sub transpose(@grid) is export is rw {
+    my $height = @grid[0].elems;
+    my @result = [];
+    for ^$height -> $y {
+        @result.push(@grid.map(-> $r { $r[$y] }));
+    }
+
+    @result;
+}
