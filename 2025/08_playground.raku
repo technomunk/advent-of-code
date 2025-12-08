@@ -61,7 +61,7 @@ my $dists := @points
     .keys
     .combinations(2)
     .map(-> ($a, $b) { [$a, $b, dist2(@points[$a], @points[$b])] })
-    .sort(-> $a, $b { $a[2] <=> $b[2] });
+    .sort({ $^a[2] <=> $^b[2] });
 
 my $graph = CircuitGraph.new();
 my $connection-count = @*ARGS[0];
