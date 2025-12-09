@@ -19,11 +19,15 @@ class Segment is export {
         $v > $.min && $v < $.max;
     }
 
-    method overlaps(Segment $o) {
+    multi method overlaps(Segment $o --> Bool) {
         self.includes($o.min)
             || self.includes($o.max)
             || $o.includes($.min)
             || $o.includes($.max);
+    }
+
+    multi method overlaps(Int $a, Int $b --> Bool) {
+        Segment.new($a, $b).overlaps(self)
     }
 
     method merge(Segment $o) {

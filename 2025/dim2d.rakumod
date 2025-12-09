@@ -28,17 +28,15 @@ class Rect2 is export {
         $.x.length * $.y.length
     }
 
-    #| Check whether this rectangle intersects provided line
-    #| NOTE: lines on the boundary of the rectangle do not count as being intersected
-    method intersects(Point2 $a, Point2 $b --> Bool) {
-        if $a.x == $b.x {
-            $.x.contains($a.x) && Segment.new($a.y, $b.y).overlaps($.y);
-        } else {
-            $.y.contains($a.y) && Segment.new($a.x, $b.x).overlaps($.x);
-        }
-    }
-
     method gist {
         "R\{x={$.x.gist} y={$.y.gist}\}"
+    }
+
+    method contains(Point2 $p --> Bool) {
+        $.x.contains($p.x) && $.y.contains($p.y);
+    }
+
+    method includes(Point2 $p --> Bool) {
+        $.x.includes($p.x) && $.y.includes($p.y);
     }
 }
