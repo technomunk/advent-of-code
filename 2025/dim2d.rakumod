@@ -1,4 +1,5 @@
 unit module dim2d;
+use segment;
 
 class Point2 is export {
     has Int $.x is built;
@@ -15,8 +16,29 @@ class Point2 is export {
     }
 }
 
-sub rect-area(Point2 $a, Point2 $b) is export {
-    my $dx = abs($a.x() - $b.x()) + 1;
-    my $dy = abs($a.y() - $b.y()) + 1;
-    $dx * $dy;
+class Rect2 is export {
+    has Segment $.x is built;
+    has Segment $.y is built;
+
+    method new(Point2 $a, Point2 $b) {
+        self.bless(x => Segment.new($a.x, $b.x), y => Segment.new($a.y, $b.y))
+    }
+
+    method area {
+        $.x.length * $.y.length
+    }
+
+    #| Check whether this rectangle intersects provided line
+    #| NOTE: lines on the boundary of the rectangle do not count as being intersected
+    method intersects(Point2 $a, Point2 $b --> Bool) {
+        if $a.x == $b.x {
+            $.x.contains($a.x) && Segment.new($a.y, $b.y).overlaps($.y);
+        } else {
+            $.y.contains($a.y) && Segment.new($a.x, $b.x).overlaps($.x);
+        }
+    }
+
+    method gist {
+        "R\{x={$.x.gist} y={$.y.gist}\}"
+    }
 }

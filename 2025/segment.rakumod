@@ -14,6 +14,11 @@ class Segment is export {
         $v >= $.min && $v <= $.max;
     }
 
+    #| Check that the provided $v is within the inner section of the segment
+    method contains(Int $v --> Bool) {
+        $v > $.min && $v < $.max;
+    }
+
     method overlaps(Segment $o) {
         self.includes($o.min)
             || self.includes($o.max)
@@ -26,8 +31,12 @@ class Segment is export {
         $.max = max($o.max, $.max);
     }
 
-    method elems(--> UInt) {
+    method length {
         $.max - $.min + 1;
+    }
+
+    method elems {
+        self.length
     }
 
     multi method gist(Segment:D: --> Str) {
