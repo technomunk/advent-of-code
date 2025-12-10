@@ -26,7 +26,19 @@ class InitInstr {
             joltage => $joltage[0].map({.Int}).list,
         )
     }
+
+    method presses-to-configure {
+        for 1..* -> $attempts {
+            for @.buttons.combinations($attempts) -> $comb {
+                my Bool @state = [False for ^@.lights.elems];
+                for $comb>>.List.flat -> $b {
+                    @state[$b] = !@state[$b];
+                }
+                return $attempts if @state eqv @.lights;
+            }
+        }
+    }
 }
 
 my @instructions = $*IN.lines.map({ InitInstr.parse($_) });
-say @instructions;
+say @instructions.map({ .presses-to-configure }).sum;
