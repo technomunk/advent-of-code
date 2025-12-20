@@ -4,9 +4,9 @@ Collection of solutions to [advent of code](https://adventofcode.com/) by @techn
 
 |year|language|puzzles completed|
 |----|--------|-----------------|
-|2020|clojure | 7 / 25          |
-|2021|ruby    | 25 / 25 ✔      |
-|2022|python 3| 18 / 25         |
-|2023|julia   | 25 / 25 ✔      |
-|2024|zig     | 23 / 25         |
-|2025|raku    | 0 / 12          |
+|2020|clojure | 14 / 50         |
+|2021|ruby    | 50 / 50 ✔      |
+|2022|python 3| 36 / 50         |
+|2023|julia   | 50 / 50 ✔      |
+|2024|zig     | 45 / 50         |
+|2025|raku    | 21 / 24         |
